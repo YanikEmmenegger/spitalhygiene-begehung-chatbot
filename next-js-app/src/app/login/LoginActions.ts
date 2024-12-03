@@ -14,6 +14,8 @@ export async function login(email: string) {
 
     const {error} = await supabase.auth.signInWithOtp(data)
 
+
+    console.log(error)
     console.log(process.env.NEXT_PUBLIC_URL)
 
     return !error;
