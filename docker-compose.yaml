@@ -18,7 +18,7 @@ services:
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
     depends_on:
-      - react
+      - next-js-app
     networks:
       - internal
       - external
