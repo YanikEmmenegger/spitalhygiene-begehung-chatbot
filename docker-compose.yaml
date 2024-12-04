@@ -6,23 +6,23 @@ services:
     env_file:
       - .env
     ports:
-      - "3000:3000"
+      - "80:3000"
 
-  nginx:
-    build: ./nginx
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - /etc/letsencrypt:/etc/letsencrypt
-    depends_on:
-      - next-js-app
-
-    #UPDATE
-  ragchat:
-    image: rag-chatbot
-    command: streamlit run src/app.py --server.port=8502 --server.address=0.0.0.0 --server.baseUrlPath=/chat
-    ports:
-      - "8502:8502"
+#  nginx:
+#    build: ./nginx
+#    ports:
+#      - "80:80"
+#      - "443:443"
+#    volumes:
+#      - /etc/letsencrypt:/etc/letsencrypt
+#    depends_on:
+#      - next-js-app
+#
+#    #UPDATE
+#  ragchat:
+#    image: rag-chatbot
+#    command: streamlit run src/app.py --server.port=8502 --server.address=0.0.0.0 --server.baseUrlPath=/chat
+#    ports:
+#      - "8502:8502"
 
 
