@@ -13,7 +13,7 @@ export default function Home() {
                         Begehungstool
                     </div>
                 </Link>
-                <Link href={"/chatbot"}>
+                <Link href={"/bot"}>
                     <div
                         className="bg-lightGreen hover:bg-darkGreen text-white min-w-52 text-center w-auto p-8 rounded-lg md:shadow-lg">
                         Chatbot
