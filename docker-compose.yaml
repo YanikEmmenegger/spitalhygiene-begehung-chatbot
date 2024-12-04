@@ -5,10 +5,8 @@ services:
       dockerfile: Dockerfile
     env_file:
       - .env
-    networks:
-      - internal
-      - external
-
+    ports:
+      - "3000:3000"
 
   nginx:
     build: ./nginx
@@ -19,23 +17,12 @@ services:
       - /etc/letsencrypt:/etc/letsencrypt
     depends_on:
       - next-js-app
-    networks:
-      - internal
-      - external
+
     #UPDATE
   ragchat:
     image: rag-chatbot
-    networks:
-      - internal
-      - external
     command: streamlit run src/app.py --server.port=8502 --server.address=0.0.0.0 --server.baseUrlPath=/chat
     ports:
       - "8502:8502"
 
-
-networks:
-  internal:
-    internal: true
-  external:
-    external: false
 
