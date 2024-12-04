@@ -42,6 +42,6 @@ export async function GET(request: NextRequest) {
     }
 
     // return the user to an error page with some instructions
-    redirectTo.pathname = '/login?error=something went wrong'
-    return NextResponse.redirect(redirectTo)
+    redirectTo.pathname = '/login?error=Etwas ist schief gelaufen'
+    return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
 }
