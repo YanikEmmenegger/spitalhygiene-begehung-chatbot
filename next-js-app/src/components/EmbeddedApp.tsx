@@ -1,3 +1,4 @@
+'use client'
 import {useEffect, useState} from 'react';
 import {FaSpinner} from 'react-icons/fa';
 import Cookies from 'js-cookie'; // Import js-cookie for cookie management
@@ -8,6 +9,7 @@ const EmbeddedApp = () => {
     const [isIframeLoaded, setIsIframeLoaded] = useState(false); // State to track iframe loading status
 
     useEffect(() => {
+        console.log("trying to load iframe with url: ", process.env.NEXT_PUBLIC_EMBEDDED_APP);
         const checkCookie = () => {
             const cookieValue = Cookies.get('disclaimerAccepted'); // Check for the cookie
             if (cookieValue === 'true') {
