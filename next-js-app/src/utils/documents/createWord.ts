@@ -1,4 +1,8 @@
-/*function getStatus(status: ReviewItemStatusOptions): string {
+import {Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType,} from "docx";
+import {ResultColor, Review, ReviewItem, ReviewItemStatusOptions} from "@/types";
+import {getDisplayNameofDate} from "@/utils/dateFormat";
+
+function getStatus(status: ReviewItemStatusOptions): string {
     switch (status) {
         case "approved":
             return "Erfüllt";
@@ -156,4 +160,3 @@ function createCategoryTable(
         }),
     ];
 }
-*/

@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
     redirectTo.searchParams.delete('token_hash')
     redirectTo.searchParams.delete('type')
 
-    //set coockie for 30 days called userAuthenticated
+    //set cookie for 30 days called userAuthenticated
     const cookieStore = await cookies()
     cookieStore.set({
         name: 'userAuthenticated',
