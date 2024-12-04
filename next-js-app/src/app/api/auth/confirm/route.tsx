@@ -14,6 +14,8 @@ export async function GET(request: NextRequest) {
 
     // Create redirect link without the secret token
     const redirectTo = request.nextUrl.clone()
+    console.log("This is the clone of the request URL")
+    console.log(redirectTo)
     redirectTo.pathname = next
     redirectTo.searchParams.delete('token_hash')
     redirectTo.searchParams.delete('type')
