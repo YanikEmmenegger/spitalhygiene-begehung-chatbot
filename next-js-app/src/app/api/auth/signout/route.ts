@@ -1,9 +1,9 @@
 import {createClient} from '@/utils/supabase/server'
 import {revalidatePath} from 'next/cache'
-import {type NextRequest, NextResponse} from 'next/server'
+import {NextResponse} from 'next/server'
 import {cookies} from "next/headers";
 
-export async function POST(req: NextRequest) {
+export async function POST() {
     const supabase = await createClient()
 
     // Check if a user's logged in
@@ -19,7 +19,7 @@ export async function POST(req: NextRequest) {
     cookieStore.delete('disclaimerAccepted')
 
     revalidatePath('/', 'layout')
-    return NextResponse.redirect(new URL('/login', req.url), {
+    return NextResponse.redirect(new URL('/login', process.env.NEXT_PUBLIC_URL), {
         status: 302,
     })
 }
