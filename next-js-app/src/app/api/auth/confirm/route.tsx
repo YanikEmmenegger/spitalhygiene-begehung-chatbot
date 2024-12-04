@@ -16,27 +16,31 @@ export async function GET(request: NextRequest) {
     const redirectTo = request.nextUrl.clone()
     console.log("This is the clone of the request URL")
     console.log(redirectTo)
+    redirectTo.hostname = process.env.NEXT_PUBLIC_URL!
+    redirectTo.host = process.env.NEXT_PUBLIC_URL!
     redirectTo.pathname = next
     redirectTo.searchParams.delete('token_hash')
     redirectTo.searchParams.delete('type')
 
-    //set cookie for 30 days called userAuthenticated
-    const cookieStore = await cookies()
-    cookieStore.set({
-        name: 'userAuthenticated',
-        value: 'true',
-        httpOnly: true,
-        path: '/',
-    })
 
 
     if (token_hash && type) {
         const supabase = await createClient()
 
-        const {error} = await supabase.auth.verifyOtp({
+        const {error, data} = await supabase.auth.verifyOtp({
             type,
             token_hash,
         })
+        //set cookie for 30 days called userAuthenticated
+        const cookieStore = await cookies()
+        cookieStore.set({
+            name: 'userAuthenticated',
+            value: data.session?.access_token || 'true',
+            httpOnly: true,
+            path: '/',
+            secure: true,
+        })
+
         if (!error) {
             redirectTo.searchParams.delete('next')
             return NextResponse.redirect(redirectTo)
