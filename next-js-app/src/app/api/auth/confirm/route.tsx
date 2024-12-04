@@ -10,19 +10,6 @@ export async function GET(request: NextRequest) {
     const {searchParams} = new URL(request.url)
     const token_hash = searchParams.get('token_hash')
     const type = searchParams.get('type') as EmailOtpType | null
-    const next = '/'
-
-    // Create redirect link without the secret token
-    const redirectTo = request.nextUrl.clone()
-    console.log("This is the clone of the request URL")
-    console.log(redirectTo)
-    redirectTo.hostname = process.env.NEXT_PUBLIC_URL!
-    redirectTo.host = process.env.NEXT_PUBLIC_URL!
-    redirectTo.pathname = next
-    redirectTo.searchParams.delete('token_hash')
-    redirectTo.searchParams.delete('type')
-
-
 
     if (token_hash && type) {
         const supabase = await createClient()
@@ -42,12 +29,10 @@ export async function GET(request: NextRequest) {
         })
 
         if (!error) {
-            redirectTo.searchParams.delete('next')
-            return NextResponse.redirect(redirectTo)
+
+            return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
         }
     }
 
-    // return the user to an error page with some instructions
-    redirectTo.pathname = '/error'
-    return NextResponse.redirect(redirectTo)
+    return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
 }
