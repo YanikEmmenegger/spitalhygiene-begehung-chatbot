@@ -18,36 +18,30 @@ export async function GET(request: NextRequest) {
     redirectTo.searchParams.delete('token_hash')
     redirectTo.searchParams.delete('type')
 
-
+    //set cookie for 30 days called userAuthenticated
+    const cookieStore = await cookies()
+    cookieStore.set({
+        name: 'userAuthenticated',
+        value: 'true',
+        httpOnly: true,
+        path: '/',
+    })
 
 
     if (token_hash && type) {
         const supabase = await createClient()
 
-        const {error, data} = await supabase.auth.verifyOtp({
+        const {error} = await supabase.auth.verifyOtp({
             type,
             token_hash,
         })
-
-
         if (!error) {
             redirectTo.searchParams.delete('next')
-
-            //set cookie for 30 days called userAuthenticated
-            const cookieStore = await cookies()
-            cookieStore.set({
-                name: 'userAuthenticated',
-                value: data.session?.access_token || 'true',
-                httpOnly: true,
-                path: '/',
-            })
-            return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
+            return NextResponse.redirect(redirectTo)
         }
-
-
     }
 
     // return the user to an error page with some instructions
-    redirectTo.pathname = '/login?error=Etwas ist schief gelaufen'
-    return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
+    redirectTo.pathname = '/error'
+    return NextResponse.redirect(redirectTo)
 }
