@@ -37,11 +37,11 @@ export async function GET(request: NextRequest) {
         })
         if (!error) {
             redirectTo.searchParams.delete('next')
-            return NextResponse.redirect(redirectTo)
+            return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
         }
     }
 
     // return the user to an error page with some instructions
-    redirectTo.pathname = '/error'
+    redirectTo.pathname = '/login?error=something went wrong'
     return NextResponse.redirect(redirectTo)
 }
