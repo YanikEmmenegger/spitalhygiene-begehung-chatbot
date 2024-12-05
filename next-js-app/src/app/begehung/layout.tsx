@@ -13,7 +13,8 @@ export default function RootLayout({
 }>) {
     return (
         <>
-            <Header link={"/begehung"}/>
+
+        <Header link={"/begehung"}/>
             {children}
         </>
     );

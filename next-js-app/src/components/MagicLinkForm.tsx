@@ -3,6 +3,7 @@ import React, {useEffect, useState} from "react";
 import Button from "@/components/Button";
 import Input from "@/components/Input";
 import {login} from "@/app/login/LoginActions";
+import Image from "next/image";
 
 const LoginForm = () => {
     const [email, setEmail] = useState("");
@@ -15,22 +16,10 @@ const LoginForm = () => {
     const validDomains: string[] = process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as [] || ["insel.ch", "hotmail.com", "rolshoven.io"];
 
     useEffect(() => {
-        // Get the hash from the URL
-        const hash = window.location.hash;
-
-        if (hash) {
-            // Remove the leading "#" and split by "&" to get individual parameters
-            const params = new URLSearchParams(hash.slice(1));
-
-            // Extract error details
-            const error = params.get("error") || "";
-            const errorCode = params.get("error_code") || "";
-            const errorDescription = params.get("error_description") || "";
-
-            console.error(`Error code: ${errorCode}, Error description: ${errorDescription}`);
-            if (error) {
-                setError("An error occurred");
-            }
+        // get url params
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has("error")) {
+            setError(urlParams.get("error") || "Fehler - Bitte versuchen Sie es erneut");
         }
     }, []);
 
@@ -74,13 +63,8 @@ const LoginForm = () => {
 
     return (
         <div className="flex flex-col -mt-10 gap-10 items-center justify-center min-h-screen">
-            <img
-                width={150}
-                height={150}
-                src={"/Logo.svg"}
-                alt="Inselspital Logo for Login"
-                className="h-12 w-auto"
-            />
+            <Image width={150} height={150} src={"/Logo.svg"} alt={"Logo Inselspital"}
+                   className={"h-12 w-auto"}/>
             <div className="bg-transparent md:bg-white p-8 rounded-lg md:shadow-lg max-w-md w-full">
                 <h2 className="text-2xl font-bold md:text-center text-gray-700 mb-5">
                     Anmeldung

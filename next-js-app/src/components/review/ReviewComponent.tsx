@@ -42,7 +42,7 @@ const InnerReviewComponent: FC = () => {
 
     return (
         <div
-            className={twMerge("w-full mb-20 max-w-2xl bg-white")}>
+            className={twMerge("w-full mb-20 mt-5 max-w-2xl bg-white")}>
             <div className={twMerge("flex flex-col gap-2", review.status === 'complete' ? "opacity-80" : "opacity-100")}>
                 <div className="flex border-b-2 mx-2 pb-5 border-neutral-300 justify-between">
                     <div>
@@ -50,10 +50,7 @@ const InnerReviewComponent: FC = () => {
                             Begehung vom: <span className="text-gray-800">{getDisplayNameofDate(review.date)}</span>
                         </p>
                         <p className="text-gray-600">
-                            <span className="font-semibold">Abteilung:</span> {review.department}
-                        </p>
-                        <p className="text-gray-600">
-                            <span className="font-semibold">Standort:</span> {review.location}
+                            <span className="font-semibold">Abteilung:</span> {review.department.name}
                         </p>
                         <p className="text-gray-600">
                             <span

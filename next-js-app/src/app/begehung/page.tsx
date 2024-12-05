@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Button from "@/components/Button";
 import RecentReviews from "@/components/recentReviews/RecentReviews";
-import LogoutButton from "@/components/LogoutButton";
+import MenuButtons from "@/components/MenuButtons";
 
 export default function Home() {
 
@@ -14,7 +14,7 @@ export default function Home() {
                 </Button>
             </Link>
             <RecentReviews/>
-            <LogoutButton/>
+            <MenuButtons/>
         </div>
     );
 }

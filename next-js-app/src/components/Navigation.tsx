@@ -1,7 +1,7 @@
 import {motion} from 'framer-motion';
 import {twMerge} from 'tailwind-merge';
 import Button from "@/components/Button";
-import LogoutButton from "@/components/LogoutButton";
+import MenuButtons from "@/components/MenuButtons";
 
 
 interface NavigationProps {
@@ -63,7 +63,7 @@ const Navigation: React.FC<NavigationProps> = ({isNavVisible, isSmallScreen, tog
 
                 {/* Language switcher at the bottom */}
                 <div className="mx-10 mb-5 flex items-center justify-between">
-                    <LogoutButton/>
+                    <MenuButtons/>
                 </div>
             </motion.div>
         </motion.div>

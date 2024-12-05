@@ -1,35 +1,101 @@
-import {NextRequest, NextResponse} from "next/server";
-import {createClient} from "@/utils/supabase/server";
-import {questions} from "@/app/api/TEMP/questions";
-
+import {NextRequest, NextResponse} from 'next/server';
+import {createClient} from '@/utils/supabase/server';
 
 export async function GET(req: NextRequest) {
-    console.log("GET /api/departments/");
+    console.log('GET /api/questions/');
     const supabase = await createClient();
 
     // Get parameters
     const {searchParams} = new URL(req.url);
-    const departments = searchParams.get("departments")?.split(";") || [];
-    const exclude = searchParams.get("exclude")?.split(";") || [];
+    const department = searchParams.get('department');
+    const exclude = searchParams.get('exclude')?.split(';') || [];
 
-    // Check if the user is logged in
-    const {data: {session}} = await supabase.auth.getSession();
-    if (!session) {
-        return NextResponse.json("Unauthorized", {status: 401});
+    // Convert exclude IDs to numbers
+    const formatIds = (ids: Array<string | number>): string => {
+        const filteredIds = ids
+            .filter((id): id is string | number => {
+                return id !== '' && id !== 'NaN' && !isNaN(Number(id));
+            })
+            .map(id => Number(id));
+
+        return `(${filteredIds.join(', ')})`;
+    };
+
+    const excludeIds = formatIds(exclude);
+
+    let departmentId: number | null = null;
+    if (department !== null && !isNaN(Number(department))) {
+        departmentId = Number(department);
     }
 
-    let _questions;
-    // Get questions based on departments and exclude IDs
-    if (departments.length > 0) {
-        _questions = questions.filter(question => {
-            const matchesDepartment = question.departments.some(department => departments.includes(department));
-            const isExcluded = exclude.includes(question._id);
-            return matchesDepartment && !isExcluded; // Include only if it matches department and is not excluded
-        });
-    } else {
-        // Return all questions, excluding those with IDs in the exclude list
-        _questions = questions.filter(question => !exclude.includes(question._id));
+    //create supabase client
+    //check if user is logged in
+    const {data: {user}} = await supabase.auth.getUser()
+    //if not logged in return 401
+    if (!user) {
+        return NextResponse.json(
+            "Unauthorized",
+            {
+                status: 401
+            }
+        )
     }
 
-    return NextResponse.json({data: _questions}, {status: 200});
+    let questionIds: number[] = [];
+
+    if (departmentId !== null) {
+        // Fetch question IDs associated with the department
+        const {data: questionIdsData, error: questionIdsError} = await supabase
+            .from('department_question')
+            .select('question_id')
+            .eq('department_id', departmentId);
+
+        if (questionIdsError) {
+            console.error('Error fetching question IDs:', questionIdsError);
+            return NextResponse.json({error: questionIdsError.message}, {status: 500});
+        }
+
+        questionIds = questionIdsData.map((item) => item.question_id);
+    }
+
+    // Build the query to fetch questions
+    let query = supabase
+        .from('question')
+        .select(`
+      id,
+      question,
+      critical,
+      type,
+      subcategory:subcategory (
+        id,
+        name,
+        category:category (
+          id,
+          name
+        )
+      ),
+      departments:department (
+        id,
+        name
+      )
+    `)
+        .not('id', 'in', excludeIds);
+
+    if (departmentId !== null) {
+        if (questionIds.length > 0) {
+            query = query.in('id', questionIds);
+        } else {
+            // No questions associated with the department
+            return NextResponse.json({data: []}, {status: 200});
+        }
+    }
+
+    const {data: questionsData, error} = await query;
+
+    if (error) {
+        console.error('Error fetching questions:', error);
+        return NextResponse.json({error: error.message}, {status: 500});
+    }
+
+    return NextResponse.json({data: questionsData}, {status: 200});
 }

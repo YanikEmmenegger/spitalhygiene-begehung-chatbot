@@ -19,7 +19,7 @@ const ReviewItemComponent: FC<ReviewItemComponentProps> = ({reviewItem}) => {
     const {updateReviewItemStatus, updateComment, review} = useReview();
 
     const handleStatusChange = (status: ReviewItemStatusOptions) => {
-        updateReviewItemStatus(reviewItem.question._id, status);
+        updateReviewItemStatus(reviewItem.question.id, status);
     };
 
     const handleSave = async () => {
@@ -27,7 +27,7 @@ const ReviewItemComponent: FC<ReviewItemComponentProps> = ({reviewItem}) => {
 
         try {
 
-            updateComment(reviewItem.question._id, comment);
+            updateComment(reviewItem.question.id, comment);
             setSaveButtonText("Gespeichert");
             setTimeout(() => setSaveButtonText("Speichern"), 1000);
 
@@ -74,7 +74,7 @@ const ReviewItemComponent: FC<ReviewItemComponentProps> = ({reviewItem}) => {
                         {saveButtonText}
                     </Button>
                 </Collapsable>
-               <PersonList  reviewItemID={reviewItem.question._id} initialPersons={reviewItem.persons}/>
+               <PersonList  reviewItemID={reviewItem._id} initialPersons={reviewItem.persons}/>
             </div>
         </li>
     );

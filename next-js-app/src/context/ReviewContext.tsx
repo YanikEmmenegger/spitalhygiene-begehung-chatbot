@@ -1,5 +1,5 @@
 import React, {createContext, useContext, useEffect, useState} from "react";
-import {Person, Review, ReviewItem, ReviewItemStatusOptions} from "@/types";
+import {Person, ResultColor, Review, ReviewItem, ReviewItemStatusOptions,} from "@/types"; // Ensure this imports the updated types
 import {getReviewById, updateReview} from "@/indexedDB/indexedDBService";
 import AddAdditionalItemsModal from "@/components/review/AddAdditionalItemsModal";
 
@@ -7,20 +7,22 @@ interface ReviewContextProps {
     review: Review | null;
     isModalOpen: boolean;
     sortedCategories: { [key: string]: ReviewItem[] };
-    updateReviewItemStatus: (itemId: string, newStatus: ReviewItemStatusOptions) => void;
+    updateReviewItemStatus: (itemId: number, newStatus: ReviewItemStatusOptions) => void;
     updateResult: (reviewData: Review) => void;
-    updateComment: (itemId: string, newComment: string) => void;
-    addPersonToReviewItem: (itemId: string, person: Person) => void;
-    deletePersonFromReviewItem: (itemId: string, personId: string) => void;
+    updateComment: (itemId: number, newComment: string) => void;
+    addPersonToReviewItem: (itemId: string, _person: Person) => void;
+    deletePersonFromReviewItem: (itemId: string, _person: Person) => void;
     toggleModal: () => void;
     addNewReviewItems: (newReviewItems: ReviewItem[]) => void;
     setReviewToComplete: () => void;
-    // Add other update functions here, e.g., for comments, persons, etc.
 }
 
 const ReviewContext = createContext<ReviewContextProps | undefined>(undefined);
 
-export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactNode }> = ({reviewID, children}) => {
+export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactNode }> = ({
+                                                                                              reviewID,
+                                                                                              children,
+                                                                                          }) => {
     const [review, setReview] = useState<Review | null>(null);
     const [sortedCategories, setSortedCategories] = useState<{ [key: string]: ReviewItem[] }>({});
     const [loading, setLoading] = useState<boolean>(true);
@@ -39,10 +41,11 @@ export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactN
                 }
             } catch (e) {
                 console.log("Fehler beim Abrufen der Begehung.", e);
+            } finally {
+                setLoading(false);
             }
         };
         fetchReview();
-        setLoading(false);
     }, [reviewID]);
 
     // Auto-save to IndexedDB whenever `review` changes
@@ -58,12 +61,12 @@ export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactN
             };
             saveReviewToDB();
         }
-    }, [review]); // This effect runs whenever `review` changes
+    }, [review]);
 
     const sortQuestionsByCategory = (reviewData: Review) => {
         const categories: { [key: string]: ReviewItem[] } = {};
 
-        reviewData.reviewItems.forEach(item => {
+        reviewData.reviewItems.forEach((item) => {
             const categoryName = item.question.subcategory.category.name;
             if (!categories[categoryName]) {
                 categories[categoryName] = [];
@@ -82,12 +85,12 @@ export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactN
             sortQuestionsByCategory(updatedReview);
             updateResult(updatedReview);
         }
-    }
+    };
 
-    const updateReviewItemStatus = (itemId: string, newStatus: ReviewItemStatusOptions) => {
+    const updateReviewItemStatus = (itemId: number, newStatus: ReviewItemStatusOptions) => {
         if (review) {
-            const updatedReviewItems: ReviewItem[] = review.reviewItems.map(item =>
-                item.question._id === itemId ? {...item, status: newStatus} : item
+            const updatedReviewItems: ReviewItem[] = review.reviewItems.map((item) =>
+                item.question.id === itemId ? {...item, status: newStatus} : item
             );
             const updatedReview = {...review, reviewItems: updatedReviewItems};
             setReview(updatedReview);
@@ -95,84 +98,94 @@ export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactN
             updateResult(updatedReview);
         }
     };
-    const updateComment = (itemId: string, newComment: string) => {
+
+    const updateComment = (itemId: number, newComment: string) => {
         if (review) {
-            const updatedReviewItems: ReviewItem[] = review.reviewItems.map(item =>
-                item.question._id === itemId ? {...item, comment: newComment} : item
+            const updatedReviewItems: ReviewItem[] = review.reviewItems.map((item) =>
+                item.question.id === itemId ? {...item, comment: newComment} : item
             );
             const updatedReview = {...review, reviewItems: updatedReviewItems};
             setReview(updatedReview);
             sortQuestionsByCategory(updatedReview);
             updateResult(updatedReview);
         }
-    }
+    };
 
-    const addPersonToReviewItem = (itemId: string, person: Person) => {
+    const addPersonToReviewItem = (itemId: string, _person: Person) => {
         if (review) {
-            // Create a new array of reviewItems with the updated persons
-            const updatedReviewItems = review.reviewItems.map(item => {
-                if (item.question._id === itemId) {
-                    // Return a new object with the updated persons array
+            const updatedReviewItems = review.reviewItems.map((item) => {
+                if (item._id === itemId) {
                     return {
                         ...item,
-                        persons: [...item.persons, person] // Add the new persontypes immutably
+                        persons: [...item.persons, _person],
                     };
                 }
-                return item; // No change for items that don't match itemId
+                return item;
             });
 
-            // Update the review state with the modified reviewItems
             const updatedReview = {...review, reviewItems: updatedReviewItems};
             setReview(updatedReview);
-            sortQuestionsByCategory(updatedReview); // Optionally update sorted categories if needed
-            updateResult(updatedReview); // Recalculate result if needed
+            sortQuestionsByCategory(updatedReview);
+            updateResult(updatedReview);
         }
     };
-    const deletePersonFromReviewItem = (itemId: string, personId: string) => {
+
+    const deletePersonFromReviewItem = (itemId: string, _person: Person) => {
         if (review) {
-            // Create a new array of reviewItems with the updated persons
-            const updatedReviewItems = review.reviewItems.map(item => {
-                if (item.question._id === itemId) {
-                    // Return a new object with the updated persons array
+            const updatedReviewItems = review.reviewItems.map((item) => {
+                if (item._id === itemId) {
                     return {
                         ...item,
-                        persons: item.persons.filter(person => person.id !== personId) // Remove the persontypes immutably
+                        persons: item.persons.filter((person) => person.id !== _person.id),
                     };
                 }
-                return item; // No change for items that don't match itemId
+                return item;
             });
 
-            // Update the review state with the modified reviewItems
             const updatedReview = {...review, reviewItems: updatedReviewItems};
             setReview(updatedReview);
-            sortQuestionsByCategory(updatedReview); // Optionally update sorted categories if needed
-            updateResult(updatedReview); // Recalculate result if needed
+            sortQuestionsByCategory(updatedReview);
+            updateResult(updatedReview);
         }
-    }
+    };
 
     const setReviewToComplete = () => {
         if (review) {
-            const updatedReview:Review = {...review, status: "complete"};
+            const updatedReview: Review = {...review, status: "complete"};
             setReview(updatedReview);
         }
-    }
+    };
 
     const updateResult = (reviewData: Review) => {
         if (review) {
             // Calculate the result of the review based on approved items
-            const approvedItems = reviewData.reviewItems.filter(item => item.status === "approved").length;
-            const partiallyApprovedItems = reviewData.reviewItems.filter(item => item.status === "partially approved").length;
-            const notReviewedItems = reviewData.reviewItems.filter(item => item.status === "not reviewed").length;
+            const approvedItems = reviewData.reviewItems.filter((item) => item.status === "approved")
+                .length;
+            const partiallyApprovedItems = reviewData.reviewItems.filter(
+                (item) => item.status === "partially approved"
+            ).length;
+            const notReviewedItems = reviewData.reviewItems.filter(
+                (item) => item.status === "not reviewed"
+            ).length;
 
-            const resultPercentage = Math.round(((approvedItems + partiallyApprovedItems) / (reviewData.reviewItems.length - notReviewedItems)) * 100);
+            const totalItems = reviewData.reviewItems.length - notReviewedItems;
+            const resultPercentage =
+                totalItems > 0
+                    ? Math.round(((approvedItems + partiallyApprovedItems) / totalItems) * 100)
+                    : 0;
 
-            // get critical review items that are failed
-            const criticalFailedItems = reviewData.reviewItems.filter(item => item.question.critical && item.status === "failed").length;
-            let resultColor: "red" | "yellow" | "green" = resultPercentage < 60 ? "red" : resultPercentage < 80 ? "yellow" : "green";
-            let _resultDescription: string | null
-            if (criticalFailedItems === 0){
+            // Get critical review items that are failed
+            const criticalFailedItems = reviewData.reviewItems.filter(
+                (item) => item.question.critical && item.status === "failed"
+            ).length;
+
+            let resultColor: ResultColor =
+                resultPercentage < 60 ? "red" : resultPercentage < 80 ? "yellow" : "green";
+            let _resultDescription: string | null;
+
+            if (criticalFailedItems === 0) {
                 _resultDescription = "Alle Hauptkritikpunkte erfüllt";
-            }else if (criticalFailedItems >= 1 && criticalFailedItems <= 3) {
+            } else if (criticalFailedItems >= 1 && criticalFailedItems <= 3) {
                 if (resultColor === "green") {
                     resultColor = "yellow";
                 }
@@ -182,42 +195,41 @@ export const ReviewProvider: React.FC<{ reviewID: string; children: React.ReactN
                 _resultDescription = `${criticalFailedItems} Hauptkritikpunkte nicht erfüllt`;
             }
 
-            const newFields: Record<string, string | number> = {
+            const newFields: Partial<Review> = {
                 result: resultColor,
                 resultPercentage: resultPercentage,
                 criticalCount: criticalFailedItems,
+                resultDescription: _resultDescription,
             };
-
-            if (_resultDescription) {
-                newFields.resultDescription = _resultDescription;
-            }
 
             // Update the review with the result data
             setReview({
                 ...reviewData,
-                ...newFields
+                ...newFields,
             });
         }
     };
 
     const toggleModal = () => {
         setIsModalOpen(!isModalOpen);
-    }
-
+    };
 
     return (
-        <ReviewContext.Provider value={{
-            review,
-            sortedCategories,
-            updateReviewItemStatus,
-            updateResult,
-            updateComment,
-            addPersonToReviewItem,
-            toggleModal,
-            isModalOpen,
-            setReviewToComplete,
-            deletePersonFromReviewItem, addNewReviewItems
-        }}>
+        <ReviewContext.Provider
+            value={{
+                review,
+                sortedCategories,
+                updateReviewItemStatus,
+                updateResult,
+                updateComment,
+                addPersonToReviewItem,
+                toggleModal,
+                isModalOpen,
+                setReviewToComplete,
+                deletePersonFromReviewItem,
+                addNewReviewItems,
+            }}
+        >
             {loading && <p className="text-center text-gray-500">Lade...</p>}
             {!loading && review ? children : <p>Begehung nicht gefunden.</p>}
             <AddAdditionalItemsModal/>

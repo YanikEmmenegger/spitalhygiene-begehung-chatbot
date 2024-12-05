@@ -1,6 +1,7 @@
 'use client';
 import {FC, useEffect, useState} from "react";
 import axios from "axios";
+import {PersonType} from "@/types";
 
 interface PersonTypeSelectProps {
     value: string;
@@ -8,7 +9,7 @@ interface PersonTypeSelectProps {
 }
 
 const PersonTypeSelect: FC<PersonTypeSelectProps> = ({value, onChange}) => {
-    const [options, setOptions] = useState<string[]>([]);
+    const [options, setOptions] = useState<PersonType[]>([]);
     const [loading, setLoading] = useState<boolean>(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -40,9 +41,9 @@ const PersonTypeSelect: FC<PersonTypeSelectProps> = ({value, onChange}) => {
                     onChange={(e) => onChange(e.target.value)}
                     className="w-full p-3 bg-gray-100 outline-none cursor-pointer"
                 >
-                    {options && options.map((type) => (
-                        <option key={type} value={type}>
-                            {type}
+                    {options && options.map((person:PersonType) => (
+                        <option key={person.name} value={person.name}>
+                            {person.name}
                         </option>
                     ))}
                 </select>
