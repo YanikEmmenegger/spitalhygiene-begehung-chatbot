@@ -1,27 +1,35 @@
 'use client'
-import Link from "next/link";
-import MenuButtons from "@/components/MenuButtons";
+import Cookies from "js-cookie";
+import {useRouter} from "next/navigation";
+import {useEffect} from "react";
+import {AiOutlineLoading} from "react-icons/ai";
+import Image from "next/image";
 
 export default function Home() {
 
+    const router = useRouter();
+
+
+    useEffect(() => {
+        const lastVisited = Cookies.get('lastVisited');
+
+        if (lastVisited) {
+            console.log(`Last visited page: ${lastVisited}`);
+            router.replace(`/${lastVisited}`);
+        } else {
+            console.log("No last visited page");
+            //set cookie to last visited page
+            Cookies.set('lastVisited', 'bot');
+            router.replace('/bot');
+        }
+    });
+
 
     return (
-        <>
-            <div className="flex gap-5 flex-col md:flex-row items-center justify-center min-h-screen">
-                <Link href={"/begehung"}>
-                    <div
-                        className="bg-lightGreen hover:bg-darkGreen text-white min-w-52 text-center p-8 rounded-lg md:shadow-lg">
-                        Begehungstool
-                    </div>
-                </Link>
-                <Link href={"/bot"}>
-                    <div
-                        className="bg-lightGreen hover:bg-darkGreen text-white min-w-52 text-center w-auto p-8 rounded-lg md:shadow-lg">
-                        Chatbot
-                    </div>
-                </Link>
-                <MenuButtons/>
-            </div>
-        </>
+        <div className={"w-screen h-screen flex flex-col gap-5 justify-center items-center"}>
+            <Image src={'/Logo.svg'} alt={"Logo"} width={200} height={200}/>
+
+            <AiOutlineLoading className={"animate-spin"} size={20}/>
+        </div>
     );
 }

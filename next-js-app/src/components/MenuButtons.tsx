@@ -5,6 +5,7 @@ import Link from "next/link";
 import {useEffect, useState} from "react";
 import axios from "axios";
 import {usePathname} from "next/navigation";
+import Cookies from "js-cookie";
 
 const MenuButtons = () => {
 
@@ -39,7 +40,15 @@ const MenuButtons = () => {
             <Link className={"w-full"} href={
                 pathname.includes("begehung") ? "/bot" : "/begehung"
             }>
-                    <Button className={"w-full"}>
+                <Button onClick={() => {
+                    if (pathname.includes("begehung")) {
+                        //set cookie to last visited page
+                        Cookies.set('lastVisited', 'bot');
+                    } else {
+                        //set cookie to last visited page
+                        Cookies.set('lastVisited', 'begehung');
+                    }
+                }} className={"w-full"}>
                         {
                             pathname.includes("begehung") ? "Chatbot" : "Internes Audit Tool"
                         }
