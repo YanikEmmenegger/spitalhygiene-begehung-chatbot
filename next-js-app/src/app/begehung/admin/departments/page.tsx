@@ -17,7 +17,7 @@ const DepartmentsAdminPage = () => {
 
     const renderItemFields = (
         item: Partial<Department>,
-        setItemField: (fieldName: keyof Department, value: any) => void
+        setItemField: (fieldName: keyof Department, value: string) => void
     ) => (
         <Input
             placeholder="Abteilungsname"

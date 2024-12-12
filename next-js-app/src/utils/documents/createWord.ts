@@ -73,9 +73,6 @@ export const generateWordFromTemplate = async (review: Review): Promise<Buffer> 
                         text: `Abteilung: ${review.department}`,
                     }),
                     new Paragraph({
-                        text: `Standort: ${review.location}`,
-                    }),
-                    new Paragraph({
                         text: `Ergebnis: ${getResultColor(review.result!)}`,
                     }),
                     new Paragraph({

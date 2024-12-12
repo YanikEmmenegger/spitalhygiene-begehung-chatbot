@@ -11,7 +11,7 @@ interface CrudAdminPageProps<Item extends { id: number }> {
     getItemDisplayName: (item: Item) => string; // Function to get item display name
     renderItemFields: (
         item: Partial<Item>,
-        setItemField: (fieldName: keyof Item, value: any) => void,
+        setItemField: (fieldName: keyof Item, value: string) => void,
         isEditing: boolean
     ) => JSX.Element; // Function to render input fields
     validateItem: (item: Partial<Item>) => boolean; // Function to validate item
@@ -47,7 +47,7 @@ function CrudAdminPage<Item extends { id: number }>({
 
     useEffect(() => {
         fetchItems();
-    }, []);
+    });
 
     const fetchItems = async () => {
         try {
@@ -148,11 +148,11 @@ function CrudAdminPage<Item extends { id: number }>({
         }
     };
 
-    const setNewItemField = (fieldName: keyof Item, value: any) => {
+    const setNewItemField = (fieldName: keyof Item, value: string) => {
         setNewItem((prev) => ({...prev, [fieldName]: value}));
     };
 
-    const setEditingItemField = (fieldName: keyof Item, value: any) => {
+    const setEditingItemField = (fieldName: keyof Item, value: string) => {
         setEditingItem((prev) => ({...prev, [fieldName]: value}));
     };
 
