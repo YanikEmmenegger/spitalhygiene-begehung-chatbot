@@ -4,6 +4,7 @@ import Button from '@/components/Button';
 import Input from '@/components/Input';
 import {login, verifyOtp} from '@/app/login/LoginActions';
 import Image from 'next/image';
+import {useRouter} from "next/navigation";
 
 const LoginForm = () => {
     const [email, setEmail] = useState('');
@@ -12,6 +13,8 @@ const LoginForm = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [showOtpField, setShowOtpField] = useState(false);
+
+    const router = useRouter()
 
     const validDomains: string[] =
         (process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as []) || [
@@ -75,9 +78,7 @@ const LoginForm = () => {
         if (success) {
             setMessage('Erfolgreich eingeloggt!');
             setError('');
-            setTimeout(() => {
-                window.location.href = '/';
-            }, 1000);
+            router.replace('/bot');
         } else {
             setError('Ungültiger OTP. Bitte erneut versuchen.');
         }

@@ -110,7 +110,7 @@ const Disclaimer: React.FC = () => {
 
                 {/* Accept Button */}
                 <div className="flex justify-center">
-                    <Button  onClick={handleAccept} className="w-full">
+                    <Button  onClick={handleAccept} className="w-full md:mb-0 mb-20">
                         Akzeptieren
                     </Button>
                 </div>
