@@ -1,60 +1,51 @@
-'use client'
-import React, {useEffect, useState} from "react";
-import Button from "@/components/Button";
-import Input from "@/components/Input";
-import {login} from "@/app/login/LoginActions";
+'use client';
+import React, {useEffect, useState} from 'react';
+import Button from '@/components/Button';
+import Input from '@/components/Input';
+import {login, verifyOtp} from '@/app/login/LoginActions';
+import Image from 'next/image';
 
 const LoginForm = () => {
-    const [email, setEmail] = useState("");
-    const [message, setMessage] = useState("");
-    const [error, setError] = useState("");
+    const [email, setEmail] = useState('');
+    const [otp, setOtp] = useState('');
+    const [message, setMessage] = useState('');
+    const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [showOtpField, setShowOtpField] = useState(false);
 
-
-    // Define allowed domains
-    const validDomains: string[] = process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as [] || ["insel.ch", "hotmail.com", "rolshoven.io"];
+    const validDomains: string[] =
+        (process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as []) || [
+            'insel.ch',
+            'hotmail.com',
+            'rolshoven.io',
+        ];
 
     useEffect(() => {
-        // Get the hash from the URL
-        const hash = window.location.hash;
-
-        if (hash) {
-            // Remove the leading "#" and split by "&" to get individual parameters
-            const params = new URLSearchParams(hash.slice(1));
-
-            // Extract error details
-            const error = params.get("error") || "";
-            const errorCode = params.get("error_code") || "";
-            const errorDescription = params.get("error_description") || "";
-
-            console.error(`Error code: ${errorCode}, Error description: ${errorDescription}`);
-            if (error) {
-                setError("An error occurred");
-            }
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('error')) {
+            setError(urlParams.get('error') || 'Fehler - Bitte versuchen Sie es erneut');
         }
     }, []);
 
-    // Email validator that checks if the email is in a valid format and belongs to a valid domain
     const validateEmail = (email: string) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email.toLowerCase())) {
-            return "Bitte geben Sie eine gültige E-Mail-Adresse ein";
+            return 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
         }
 
-        // Extract the domain from the email
-        const domain = email.split("@")[1];
+        const domain = email.split('@')[1];
         if (!validDomains.includes(domain)) {
             return `Bitte verwenden Sie eine E-Mail-Adresse mit @insel.ch`;
         }
 
-        return "";
+        return '';
     };
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         const validationError = validateEmail(email);
-        setMessage("");
-        setError("");
+        setMessage('');
+        setError('');
 
         if (validationError) {
             setError(validationError);
@@ -64,27 +55,46 @@ const LoginForm = () => {
         setLoading(true);
         const success = await login(email);
         if (success) {
-            setMessage("Anmelde-Link wurde gesendet. Bitte überprüfen Sie Ihr E-Mail-Postfach");
-            setError("");
+            setMessage(
+                'Anmelde-Link wurde gesendet. Bitte überprüfen Sie Ihr E-Mail-Postfach oder geben Sie den per E-Mail erhaltenen OTP ein.',
+            );
+            setError('');
+            setShowOtpField(true); // Show OTP field
         } else {
-            setError("Fehler beim Senden des Anmelde-Links");
+            setError('Fehler beim Senden des Anmelde-Links');
+        }
+        setLoading(false);
+    };
+
+    const handleVerifyOtp = async () => {
+        setMessage('');
+        setError('');
+        setLoading(true);
+
+        const success = await verifyOtp(email, otp);
+        if (success) {
+            setMessage('Erfolgreich eingeloggt!');
+            setError('');
+            setTimeout(() => {
+                window.location.href = '/';
+            }, 1000);
+        } else {
+            setError('Ungültiger OTP. Bitte erneut versuchen.');
         }
         setLoading(false);
     };
 
     return (
         <div className="flex flex-col -mt-10 gap-10 items-center justify-center min-h-screen">
-            <img
+            <Image
                 width={150}
                 height={150}
-                src={"/Logo.svg"}
-                alt="Inselspital Logo for Login"
-                className="h-12 w-auto"
+                src={'/Logo.svg'}
+                alt={'Logo Inselspital'}
+                className={'h-12 w-auto'}
             />
             <div className="bg-transparent md:bg-white p-8 rounded-lg md:shadow-lg max-w-md w-full">
-                <h2 className="text-2xl font-bold md:text-center text-gray-700 mb-5">
-                    Anmeldung
-                </h2>
+                <h2 className="text-2xl font-bold md:text-center text-gray-700 mb-5">Anmeldung</h2>
                 <form onSubmit={handleSubmit}>
                     <div className="mb-4">
                         <label htmlFor="email" className="block text-gray-600 mb-2">
@@ -96,14 +106,36 @@ const LoginForm = () => {
                             id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            placeholder={"E-Mail-Adresse eingeben"}
+                            placeholder={'E-Mail-Adresse eingeben'}
                         />
                     </div>
 
+                    {showOtpField && (
+                        <div className="mb-4">
+                            <label htmlFor="otp" className="block text-gray-600 mb-2">
+                                OTP
+                            </label>
+                            <Input
+                                type="text"
+                                name="otp"
+                                id="otp"
+                                value={otp}
+                                onChange={(e) => setOtp(e.target.value)}
+                                placeholder={'OTP eingeben'}
+                            />
+                        </div>
+                    )}
+
                     <div className="flex justify-center">
-                        <Button disabled={loading} type="submit" className="w-full">
-                            {loading ? "lädt..." : "Anmelden"}
-                        </Button>
+                        {!showOtpField ? (
+                            <Button disabled={loading} type="submit" className="w-full">
+                                {loading ? 'lädt...' : 'Anmelden'}
+                            </Button>
+                        ) : (
+                            <Button disabled={loading || otp.length === 0} onClick={handleVerifyOtp} className="w-full">
+                                {loading ? 'lädt...' : 'OTP Verifizieren'}
+                            </Button>
+                        )}
                     </div>
                 </form>
                 <p className="text-red-500 text-sm mt-2">{error}</p>

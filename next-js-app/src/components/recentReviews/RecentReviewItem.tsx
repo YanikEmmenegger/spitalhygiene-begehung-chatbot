@@ -16,17 +16,17 @@ const RecentReviewItem: FC<RecentReviewItemProps> = ({review, onDelete}) => {
                 className="w-full p-2 rounded-lg bg-w hite shadow-md flex justify-between items-center border border-gray-200">
                 <Link className={"flex-1"} href={"/begehung/review/" + review._id}>
 
-                <div className="flex flex-col text-left">
+                    <div className="flex flex-col text-left">
                 <span className="text-gray-700 font-medium">
-                    {review.department}
+                    {review.department.name}
                 </span>
-                    <span className="text-gray-500 text-sm">{review.location}</span>
-                </div>
+                        <span className="text-xs font-light">{getDisplayNameofDate(review.date)}</span>
+
+                    </div>
                 </Link>
                 <div className={"flex  flex-col items-end justify-end"}>
                     <div className={"flex justify-center gap-2 items-center"}>
                         <div className="text-gray-600">
-                            <span className="text-sm font-medium">{getDisplayNameofDate(review.date)}</span>
                         </div>
                         {review.status !== "complete" &&
                             <div className="text-amber-500">

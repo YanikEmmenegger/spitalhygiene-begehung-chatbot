@@ -1,52 +1,56 @@
+import {Database} from './database.types';
+
+type CategoryRow = Database['public']['Tables']['category']['Row'];
+type SubcategoryRow = Database['public']['Tables']['subcategory']['Row'];
+type QuestionRow = Database['public']['Tables']['question']['Row'];
+type DepartmentRow = Database['public']['Tables']['department']['Row'];
+type QuestionTypesEnum = Database['public']['Enums']['question_types'];
+type PersonTypeRow = Database['public']['Tables']['person_types']['Row'];
+
 export type ReviewStatus = 'incomplete' | 'complete';
 export type ReviewItemStatusOptions = 'approved' | 'failed' | 'partially approved' | 'not reviewed';
 export type ResultColor = 'red' | 'yellow' | 'green';
 
+export type Category = CategoryRow
 
-export interface Review {
-    _id: string;
-    department: string; // Might be Confidential, might be Random string then
-    date: string;
-    reviewer: string; //email
-    location: string; // Might be Confidential, might be Random string then
-    result?: ResultColor
-    resultPercentage?: number;
-    reviewItems: ReviewItem[];
-    status: ReviewStatus;
-    criticalCount?: number;
-    resultDescription?: string;
-}
-
-export interface Category {
-    name: string;
-    description?: string;
-}
-
-export interface SubCategory {
-    name: string;
+export interface SubCategory extends Omit<SubcategoryRow, 'category'> {
     category: Category;
-    description?: string;
 }
 
-export interface Question {
-    _id: string;
-    question: string;
+export type Department = DepartmentRow
+
+export type PersonType = PersonTypeRow
+
+export interface Question extends Omit<QuestionRow, 'subcategory' | 'type'> {
     subcategory: SubCategory;
-    critical: boolean;
-    departments: string[];
-    type: string;
-}
-
-export interface ReviewItem {
-    question: Question;
-    status: ReviewItemStatusOptions
-    comment?: string;
-    persons: Person[];
+    departments: Department[];
+    type: QuestionTypesEnum | null;
 }
 
 export interface Person {
     id: string;
     type: string;
-    status: ReviewItemStatusOptions
+    status: ReviewItemStatusOptions;
     comment?: string;
+}
+
+export interface ReviewItem {
+    _id: string;
+    question: Question;
+    status: ReviewItemStatusOptions;
+    comment?: string;
+    persons: Person[];
+}
+
+export interface Review {
+    _id: string;
+    department: Department;
+    date: string;
+    reviewer: string;
+    result?: ResultColor;
+    resultPercentage?: number;
+    reviewItems: ReviewItem[];
+    status: ReviewStatus;
+    criticalCount?: number;
+    resultDescription?: string;
 }

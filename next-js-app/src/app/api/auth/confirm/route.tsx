@@ -12,28 +12,27 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') as EmailOtpType | null
 
 
-
-    //set cookie for 30 days called userAuthenticated
-    const cookieStore = await cookies()
-    cookieStore.set({
-        name: 'userAuthenticated',
-        value: 'true',
-        httpOnly: true,
-        path: '/',
-    })
-
-
     if (token_hash && type) {
         const supabase = await createClient()
 
-        const {error} = await supabase.auth.verifyOtp({
+        const {error, data} = await supabase.auth.verifyOtp({
             type,
             token_hash,
         })
         if (!error) {
 
+            //set cookie for 30 days called userAuthenticated
+            const cookieStore = await cookies()
+            cookieStore.set({
+                name: 'userAuthenticated',
+                value: data.session?.access_token || '',
+                httpOnly: true,
+                path: '/',
+            })
+
             return NextResponse.redirect(process.env.NEXT_PUBLIC_URL!)
         }
+
     }
 
     // return the user to an error page with some instructions

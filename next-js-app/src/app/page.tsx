@@ -1,6 +1,6 @@
 'use client'
 import Link from "next/link";
-import LogoutButton from "@/components/LogoutButton";
+import MenuButtons from "@/components/MenuButtons";
 
 export default function Home() {
 
@@ -20,7 +20,7 @@ export default function Home() {
                         Chatbot
                     </div>
                 </Link>
-                <LogoutButton/>
+                <MenuButtons/>
             </div>
         </>
     );

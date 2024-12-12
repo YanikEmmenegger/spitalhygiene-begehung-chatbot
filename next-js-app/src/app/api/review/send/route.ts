@@ -20,8 +20,18 @@ export async function POST(req: NextRequest) {
     try {
         const {review} = await req.json();
 
-        const _user = await supabase.auth.getUser();
-        const user = _user.data.user;
+        //create supabase client
+        //check if user is logged in
+        const {data: {user}} = await supabase.auth.getUser()
+        //if not logged in return 401
+        if (!user) {
+            return NextResponse.json(
+                "Unauthorized",
+                {
+                    status: 401
+                }
+            )
+        }
 
         // Check if the review is complete and valid
         if (!review || typeof review !== "object" || review.status !== "complete") {

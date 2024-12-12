@@ -36,9 +36,9 @@ const PersonList: FC<PersonListProps> = ({reviewItemID, initialPersons}) => {
         });
     };
 
-    const deletePerson = (personID: string) => {
-        setPersons(persons.filter(person => person.id !== personID));
-        deletePersonFromReviewItem(reviewItemID, personID);
+    const deletePerson = (_person: Person) => {
+        setPersons(persons.filter(person => person.id !== _person.id));
+        deletePersonFromReviewItem(reviewItemID, _person);
     };
 
     return (

@@ -6,7 +6,7 @@ import {Person} from "@/types";
 
 interface PersonItemProps {
     person: Person;
-    onDelete: (id: string) => void;
+    onDelete: (person: Person) => void;
 }
 
 const PersonItem: FC<PersonItemProps> = ({person, onDelete}) => {
@@ -34,7 +34,7 @@ const PersonItem: FC<PersonItemProps> = ({person, onDelete}) => {
             </p>
 
             <div className="flex items-center justify-center gap-4">
-                <Button className={review!.status === 'complete' ? "hidden": ""} onClick={() => onDelete(person.id)}>Löschen</Button>
+                <Button className={review!.status === 'complete' ? "hidden": ""} onClick={() => onDelete(person)}>Löschen</Button>
             </div>
         </div>
     );

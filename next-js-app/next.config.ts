@@ -1,7 +1,14 @@
-import type { NextConfig } from "next";
+const nextConfig = {
+    async redirects() {
+        return [
+            {
+                source: '/',
+                destination: '/bot',
+                permanent: true,
+            },
 
-const nextConfig: NextConfig = {
-  /* config options here */
+        ];
+    },
 };
 
 export default nextConfig;

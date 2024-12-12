@@ -1,29 +1,28 @@
 'use client';
 
-
-import {Question, ReviewItem} from "@/types";
+import {Question, ReviewItem} from "@/types"; // Ensure this imports the updated types with `id: number`
 import {useEffect, useState} from "react";
 import axios from "axios";
 import {useReview} from "@/context/ReviewContext";
 import Modal from "@/components/Modal";
 import QuestionBlock from "@/components/review/QuestionBlock";
 import Button from "@/components/Button";
+import {v4 as uuidv4} from "uuid";
 
 const AddAdditionalItemsModal = () => {
     const {isModalOpen, toggleModal, addNewReviewItems, review} = useReview();
 
     const [categories, setCategories] = useState<{ [key: string]: Question[] }>({});
     const [questions, setQuestions] = useState<Question[]>([]); // Store all questions in a flat array
-    const [selectedQuestions, setSelectedQuestions] = useState<string[]>([]);
+    const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]); // Changed from `string[]` to `number[]`
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [saveButtonText, setSaveButtonText] = useState<string | React.ReactNode>("Hinzufügen");
 
     // Fetch and sort questions into categories
     const fetchQuestions = async () => {
-
-        //get all ids of questions that are already in the review (review.reviewItems.question.id)
-        const idsAlreadyInReview = review!.reviewItems.map((item) => item.question._id).join(";");
+        // Get all IDs of questions that are already in the review
+        const idsAlreadyInReview = review!.reviewItems.map((item) => item.question.id).join(";");
 
         setLoading(true);
         try {
@@ -54,7 +53,7 @@ const AddAdditionalItemsModal = () => {
     };
 
     // Toggle question selection
-    const toggleQuestionSelection = (questionId: string) => {
+    const toggleQuestionSelection = (questionId: number) => {
         setSelectedQuestions((prevSelected) =>
             prevSelected.includes(questionId)
                 ? prevSelected.filter((id) => id !== questionId)
@@ -66,10 +65,11 @@ const AddAdditionalItemsModal = () => {
         setSaveButtonText("Hinzufügen....");
 
         // Map selected question IDs to full Question objects
-        const selectedFullQuestions = questions.filter((q) => selectedQuestions.includes(q._id));
+        const selectedFullQuestions = questions.filter((q) => selectedQuestions.includes(q.id));
 
         // Convert selected Questions into ReviewItems
         const newReviewItems: ReviewItem[] = selectedFullQuestions.map((question) => ({
+            _id: uuidv4(),
             question, // Full Question object
             status: "not reviewed",
             comment: "",
@@ -104,16 +104,16 @@ const AddAdditionalItemsModal = () => {
 
                 {!loading && !error && (
                     <div className="flex flex-col gap-6">
-                        {questions && Object.entries(categories).map(([categoryName, questions]) => (
+                        {questions.length > 0 && Object.entries(categories).map(([categoryName, questions]) => (
                             <div key={categoryName} className="mb-4">
                                 <h3 className="text-lg font-medium text-gray-800 mb-2">{categoryName}</h3>
                                 <div className="grid grid-cols-1 gap-4">
                                     {questions.map((question) => (
                                         <QuestionBlock
-                                            key={question._id}
+                                            key={question.id}
                                             question={question}
-                                            isSelected={selectedQuestions.includes(question._id)}
-                                            onClick={() => toggleQuestionSelection(question._id)}
+                                            isSelected={selectedQuestions.includes(question.id)}
+                                            onClick={() => toggleQuestionSelection(question.id)}
                                         />
                                     ))}
                                 </div>
@@ -122,12 +122,13 @@ const AddAdditionalItemsModal = () => {
                         {questions.length === 0 && <p>Keine weiteren Fragen verfügbar.</p>}
                     </div>
                 )}
-                <Button disabled={saveButtonText !== "Hinzufügen" || loading || questions.length === 0}
-                        onClick={handleSave}>
+                <Button
+                    disabled={saveButtonText !== "Hinzufügen" || loading || questions.length === 0}
+                    onClick={handleSave}
+                >
                     {saveButtonText}
                 </Button>
-                <Button className={"bg-transparent text-lightGreen border-lightGreen border"}
-                        onClick={toggleModal}>
+                <Button className={"bg-transparent text-lightGreen border-lightGreen border"} onClick={toggleModal}>
                     Abbrechen
                 </Button>
             </div>
