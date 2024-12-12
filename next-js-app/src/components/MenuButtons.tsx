@@ -36,13 +36,15 @@ const MenuButtons = () => {
 
     return (
         <div className={"flex flex-col md:flex-row gap-2 md:w-auto w-[90%] absolute bottom-5 md:right-5"}>
-            {(pathname.includes("begehung") || pathname.includes("bot")) && (
-                <Link className={"w-full"} href={"/"}>
+            <Link className={"w-full"} href={
+                pathname.includes("begehung") ? "/bot" : "/begehung"
+            }>
                     <Button className={"w-full"}>
-                        Hauptmenu
+                        {
+                            pathname.includes("begehung") ? "Chatbot" : "Internes Audit Tool"
+                        }
                     </Button>
                 </Link>
-            )}
             <form className={""} action={"/api/auth/signout"} method="post">
             <Button className={"w-full"} onClick={() => handleLogout()} red>Logout</Button>
         </form>
