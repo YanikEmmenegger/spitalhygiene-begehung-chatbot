@@ -1,6 +1,7 @@
 'use server';
 
 import {createClient} from '@/utils/supabase/server';
+import {cookies} from "next/headers";
 
 export async function login(email: string) {
     const supabase = await createClient();
@@ -19,16 +20,25 @@ export async function login(email: string) {
 export async function verifyOtp(email: string, token: string) {
     const supabase = await createClient();
 
-    const {error} = await supabase.auth.verifyOtp({
+    const {data, error} = await supabase.auth.verifyOtp({
         email,
         token,
         type: 'email',
     });
 
+
     if (error) {
         console.log(error);
         return false;
     }
+    //set cookie for 30 days called userAuthenticated
+    const cookieStore = await cookies()
+    cookieStore.set({
+        name: 'userAuthenticated',
+        value: data.session?.access_token || '',
+        httpOnly: true,
+        path: '/',
+    })
 
     // Store the access token in a secure cookie or session
     return true;
