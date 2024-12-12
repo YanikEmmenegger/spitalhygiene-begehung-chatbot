@@ -1,8 +1,8 @@
 import {NextRequest, NextResponse} from "next/server";
 import {createClient} from "@/utils/supabase/server";
+import {handleSupabaseError} from "@/app/api/handleSupabaseError";
 
-export async function GET(req: NextRequest) {
-    console.log(req)
+export async function GET() {
     console.log("GET /api/departments/")
 
     try {
@@ -40,4 +40,35 @@ export async function GET(req: NextRequest) {
         )
     }
 
+}
+
+
+export async function POST(req: NextRequest) {
+    console.log('POST /api/departments/');
+    try {
+        const supabase = await createClient();
+
+        // Get the department data from the request body
+        const { name } = await req.json();
+
+        if (!name || !name.trim()) {
+            return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+        }
+
+        // Insert the new department
+        const { data, error: insertError } = await supabase
+            .from('department')
+            .insert({ name: name.trim() })
+            .select()
+            .single();
+
+        if (insertError) {
+            return handleSupabaseError(insertError);
+        }
+
+        return NextResponse.json({ data }, { status: 201 });
+    } catch (e) {
+        console.error('Error adding department:', e);
+        return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
+    }
 }

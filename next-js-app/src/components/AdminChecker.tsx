@@ -35,7 +35,7 @@ const AdminChecker: FC<AdminCheckerProps> = ({children}) => {
             ) : isAdmin ? (
                 <div>{children}</div>
             ) : (
-                <div>Du bist kein Admin</div>
+                <div>Zugriff verweigert - Bitte melde dich bei deinem Vorgesetzten für den Zugriff</div>
             )}
         </>
     );
