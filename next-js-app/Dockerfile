@@ -1,23 +1,22 @@
 # Use the official Node.js image as the base
-FROM node:18-alpine
+FROM node:18-alpine AS builder
 
 # Set the working directory
 WORKDIR /app
 
-# Copy the package files
+# Install dependencies and build the app
 COPY package.json package-lock.json ./
-
-# Install dependencies
-RUN npm ci
-
-# Copy the rest of the application source code
+RUN npm install --legacy-peer-deps
 COPY . .
-
-# Build the Next.js app
 RUN npm run build
 
-# Expose the internal port
+# Use a smaller base image for serving
+FROM node:18-alpine
+WORKDIR /app
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/package.json ./package.json
+
 EXPOSE 3000
 
-# Run Next.js in production mode
 CMD ["npm", "run", "start"]
