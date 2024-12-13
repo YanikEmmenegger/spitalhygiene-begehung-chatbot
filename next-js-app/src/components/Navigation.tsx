@@ -31,7 +31,7 @@ const Navigation: React.FC<NavigationProps> = ({isNavVisible, isSmallScreen, tog
                 animate={{opacity: isNavVisible ? 1 : 0}} // Fade in/out based on visibility
                 transition={{delay: 0.2}}
             >
-                <div className={twMerge("ml-10 mt-20 lg:text-left", isNavVisible ? "opacity-100" : "opacity-0")}>
+                <div className={twMerge("mx-5 mt-20 lg:text-left", isNavVisible ? "opacity-100" : "opacity-0")}>
                     <h2 className="text-3xl mb-5 text-lightGray font-bold">
                         Menu
                     </h2>
@@ -45,8 +45,14 @@ const Navigation: React.FC<NavigationProps> = ({isNavVisible, isSmallScreen, tog
                             t('navigation.links', {returnObjects: true}).map((link, index) => (
                                 <NavigationLink key={index} href={link.link} text={link.title}/>
                             ))}*/}
-                        <div className={"mt-5 text-lightGray border-t-[1px] pt-5 mr-10"}>
+                        <div className={" text-lightGray border-t-[1px] pt-5 "}>
                             Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
+                            gelsöcht werden, Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
+                            gelsöcht werden, Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
+                            gelsöcht werden, Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
+                            gelsöcht werden, Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
+                            gelsöcht werden, Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
+                            gelsöcht werden, Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder
                             gelsöcht werden
                         </div>
                     </div>
@@ -59,12 +65,13 @@ const Navigation: React.FC<NavigationProps> = ({isNavVisible, isSmallScreen, tog
                             </Button>
                         </div>
                     )}
+                    {/* Language switcher at the bottom */}
+                    <div className="py-5 mb-16 flex items-center justify-between">
+                        <MenuButtons/>
+                    </div>
                 </div>
 
-                {/* Language switcher at the bottom */}
-                <div className="mx-10 mb-5 flex items-center justify-between">
-                    <MenuButtons/>
-                </div>
+
             </motion.div>
         </motion.div>
     );

@@ -36,7 +36,7 @@ const MenuButtons = () => {
     const pathname = usePathname()
 
     return (
-        <div className={"flex flex-col md:flex-row gap-2 md:w-auto w-[90%] absolute bottom-5 md:right-5"}>
+        <div className={"flex flex-col md:flex-row gap-2 md:w-auto w-[90%]"}>
             <Link className={"w-full"} href={
                 pathname.includes("begehung") ? "/bot" : "/begehung"
             }>
