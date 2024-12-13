@@ -2,9 +2,10 @@
 import React, {useEffect, useState} from 'react';
 import Button from '@/components/Button';
 import Input from '@/components/Input';
-import {login, verifyOtp} from '@/app/login/LoginActions';
+import {login} from '@/app/login/LoginActions';
 import Image from 'next/image';
-import {useRouter} from "next/navigation";
+import {useRouter} from 'next/navigation';
+import axios from 'axios';
 
 const LoginForm = () => {
     const [email, setEmail] = useState('');
@@ -14,7 +15,7 @@ const LoginForm = () => {
     const [loading, setLoading] = useState(false);
     const [showOtpField, setShowOtpField] = useState(false);
 
-    const router = useRouter()
+    const router = useRouter();
 
     const validDomains: string[] =
         (process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as []) || [
@@ -56,7 +57,7 @@ const LoginForm = () => {
         }
 
         setLoading(true);
-        const success = await login(email);
+        const success = await login(email); // Use the action for email login
         if (success) {
             setMessage(
                 'Anmelde-Link wurde gesendet. Bitte überprüfen Sie Ihr E-Mail-Postfach oder geben Sie den per E-Mail erhaltenen OTP ein.',
@@ -74,15 +75,27 @@ const LoginForm = () => {
         setError('');
         setLoading(true);
 
-        const success = await verifyOtp(email, otp);
-        if (success) {
-            setMessage('Erfolgreich eingeloggt!');
-            setError('');
-            router.replace('/bot');
-        } else {
+        try {
+            const response = await axios.get('/api/auth/confirm', {
+                params: {
+                    email,
+                    token: otp,
+                    type: 'email', // Ensure this matches your backend's type
+                },
+            });
+
+            if (response.status === 200) {
+                setMessage('Erfolgreich eingeloggt!');
+                router.replace('/'); // Redirect to /bot
+            } else {
+                setError('Ungültiger OTP. Bitte erneut versuchen.');
+            }
+        } catch (err) {
             setError('Ungültiger OTP. Bitte erneut versuchen.');
+            console.error(err);
+        } finally {
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     return (

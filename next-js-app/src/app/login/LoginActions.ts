@@ -26,11 +26,6 @@ export async function verifyOtp(email: string, token: string) {
         type: 'email',
     });
 
-
-    if (error) {
-        console.log(error);
-        return false;
-    }
     //set cookie for 30 days called userAuthenticated
     const cookieStore = await cookies()
     cookieStore.set({
@@ -39,6 +34,11 @@ export async function verifyOtp(email: string, token: string) {
         httpOnly: true,
         path: '/',
     })
+
+    if (error) {
+        console.log(error);
+        return false;
+    }
 
     // Store the access token in a secure cookie or session
     return true;
