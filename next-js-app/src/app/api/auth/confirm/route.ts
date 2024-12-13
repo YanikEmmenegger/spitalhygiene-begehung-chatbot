@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
             if (token_hash) {
                 return NextResponse.redirect(process.env.NEXT_PUBLIC_URL || '/');
             }else {
-                return NextResponse.json({message: 'User authenticated successfully'}, {status: 200});
+                return NextResponse.redirect(process.env.NEXT_PUBLIC_URL || '/');
             }
 
 
