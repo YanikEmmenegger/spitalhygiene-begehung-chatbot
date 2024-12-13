@@ -1,3 +1,4 @@
+version: '3.8'
 services:
   next-js-app:
     build:
@@ -7,24 +8,34 @@ services:
       - ragchat
     env_file:
       - .env
+    networks:
+      - app-network
     ports:
       - "3000:3000"
+    restart: unless-stopped
 
   nginx:
     build: ./nginx
+    depends_on:
+      - next-js-app
     ports:
       - "80:80"
       - "443:443"
     volumes:
       - /etc/letsencrypt:/etc/letsencrypt
-    depends_on:
-      - next-js-app
+    networks:
+      - app-network
+    restart: unless-stopped
 
-    #UPDATE
   ragchat:
     image: rag-chatbot
     command: streamlit run src/app.py --server.port=8502 --server.address=0.0.0.0 --server.baseUrlPath=/chat
     ports:
       - "8502:8502"
+    networks:
+      - app-network
+    restart: unless-stopped
 
-
+networks:
+  app-network:
+    driver: bridge
