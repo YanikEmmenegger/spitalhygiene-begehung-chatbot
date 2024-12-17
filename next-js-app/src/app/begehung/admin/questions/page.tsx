@@ -39,8 +39,6 @@ const Page = () => {
 
     // Delete a question with confirmation
     const deleteQuestion = async (id: number) => {
-        if (!confirm("Sind Sie sicher, dass Sie diese Frage löschen möchten?")) return;
-
         setDeletingId(id);
         try {
             await axios.delete(`/api/questions?id=${id}`);

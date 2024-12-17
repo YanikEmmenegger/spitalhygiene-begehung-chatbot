@@ -2,7 +2,8 @@
 
 import React from 'react';
 import Button from '@/components/Button';
-import { SubCategory } from '@/types';
+import {SubCategory} from '@/types';
+import ConfirmDelete from "@/components/ConfirmDelete";
 
 interface SubcategoryTableProps {
     subcategories: SubCategory[];
@@ -45,15 +46,10 @@ const SubcategoryTable: React.FC<SubcategoryTableProps> = ({
                                     >
                                         Bearbeiten
                                     </Button>
-                                    <Button
-                                        onClick={() => onDelete(subcategory.id)}
-                                        disabled={deletingId === subcategory.id}
-                                        className="bg-red-500 hover:bg-red-600 text-white"
-                                    >
-                                        {deletingId === subcategory.id
-                                            ? 'Löschen...'
-                                            : 'Löschen'}
-                                    </Button>
+                                    <ConfirmDelete onDelete={() => onDelete(subcategory.id)}
+                                                   text={deletingId === subcategory.id ? "löschen..." : "löschen"}
+                                                   confirmText={"Bestätigen"}/>
+
                                 </div>
                             </td>
                         </tr>
