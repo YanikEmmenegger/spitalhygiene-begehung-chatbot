@@ -1,59 +1,139 @@
 'use client';
 
-import CrudAdminPage from '@/components/CrudAdminPage';
-import Input from '@/components/Input';
+import React, { useEffect, useState } from 'react';
+import { Department } from "@/types";
+import axios, { AxiosError } from "axios";
+import ConfirmDelete from "@/components/ConfirmDelete";
+import Button from "@/components/Button";
+import Link from "next/link";
+import { twMerge } from "tailwind-merge";
+import AddDepartmentModal from "@/components/admin/AddDepartmentModal";
 
-interface Department {
-    id: number;
-    name: string;
-}
+const Page = () => {
+    const [loading, setLoading] = useState<boolean>(true); // Initial loading state
+    const [deleting, setDeleting] = useState<number | null>(null); // Tracks loading during deletion
+    const [error, setError] = useState<string | null>(null);
+    const [departments, setDepartments] = useState<Department[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState<boolean>(false); // Modal state
 
-const DepartmentsAdminPage = () => {
-    const entityName = 'Abteilung';
-    const entityNamePlural = 'Abteilungen';
-    const apiEndpoint = '/api/departments';
-
-    const getItemDisplayName = (item: Department) => item.name;
-
-    const renderItemFields = (
-        item: Partial<Department>,
-        setItemField: (fieldName: keyof Department, value: string) => void
-    ) => (
-        <Input
-            placeholder="Abteilungsname"
-            value={item.name || ''}
-            onChange={(e) => setItemField('name', e.target.value)}
-        />
-    );
-
-    const validateItem = (item: Partial<Department>) => {
-        return !!item.name && item.name.trim().length > 0;
+    // Helper function to handle Axios errors
+    const handleAxiosError = (e: unknown, fallbackMessage: string): string => {
+        const error = e as AxiosError<{ error: string }>;
+        return error.response?.data?.error || fallbackMessage;
     };
 
-    const errorMessages = {
-        loadError: 'Fehler beim Laden der Abteilungen.',
-        addError: 'Fehler beim Hinzufügen der Abteilung.',
-        updateError:
-            'Fehler beim Aktualisieren der Abteilung. Abteilungsname darf nicht leer und kein Duplikat sein.',
-        deleteError:
-            'Fehler beim Löschen der Abteilung. Bitte prüfen Sie, ob die Abteilung noch mit Fragen verknüpft ist. Abteilungen können nur gelöscht werden, wenn keine Fragen mehr verknüpft sind.',
-        validationError: 'Abteilungsname darf nicht leer sein.',
-        duplicateError: 'Abteilung existiert bereits.',
-        unauthorizedError: 'Berechtigungsprobleme.',
-        forbiddenError: 'Zugriff verweigert.',
+    // Fetch departments
+    const fetchDepartments = async () => {
+        setError(null);
+        //setLoading(true);
+        try {
+            const response = await axios.get('/api/departments');
+            setDepartments(response.data.data || []);
+        } catch (e) {
+            setError(handleAxiosError(e, "Fehler beim Laden der Abteilungen."));
+        } finally {
+            setLoading(false);
+        }
     };
+
+    // Delete a department
+    const deleteDepartment = async (id: number) => {
+        setError(null);
+        setDeleting(id); // Set loading state for the specific department
+        try {
+            await axios.delete(`/api/departments?id=${id}`);
+            await fetchDepartments(); // Refresh departments after deletion
+        } catch (e) {
+            setError(handleAxiosError(e, "Fehler beim Löschen der Abteilung."));
+        } finally {
+            setDeleting(null);
+        }
+    };
+
+    const toggleModal = () => setIsModalOpen((prev) => !prev);
+
+    useEffect(() => {
+        fetchDepartments();
+    }, []);
 
     return (
-        <CrudAdminPage<Department>
-            entityName={entityName}
-            entityNamePlural={entityNamePlural}
-            apiEndpoint={apiEndpoint}
-            getItemDisplayName={getItemDisplayName}
-            renderItemFields={renderItemFields}
-            validateItem={validateItem}
-            errorMessages={errorMessages}
-        />
+        <div className="container mx-auto py-4">
+            <h1 className="text-2xl font-bold mb-4">Abteilungen</h1>
+
+            {/* Display error */}
+            {error && <div className="text-red-500 mb-4">Error: {error}</div>}
+
+
+
+            {/* Loading State */}
+            {loading ? (
+                <ul className="space-y-2">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <li
+                            key={i}
+                            className={twMerge(
+                                "flex animate-pulse justify-between items-center p-2",
+                                i % 2 === 0 ? "bg-neutral-100" : "bg-neutral-200"
+                            )}
+                        >
+                            <span className="w-2/3 h-4 bg-gray-300 rounded"></span>
+                            <div className="flex gap-2">
+                                <Button className="bg-gray-300" disabled>
+                                    Bearbeiten
+                                </Button>
+                                <Button className="bg-gray-300" disabled>
+                                    Löschen
+                                </Button>
+                            </div>
+                        </li>
+                    ))}
+                </ul>
+            ) : (
+                // Department List
+                <ul className="space-y-2">
+                    {departments.length > 0 ? (
+                        departments.map((department, index) => (
+                            <li
+                                key={department.id}
+                                className={twMerge(
+                                    "flex justify-between items-center p-2",
+                                    index % 2 === 0 ? "bg-neutral-100" : "bg-neutral-200"
+                                )}
+                            >
+                                <span>{department.name}</span>
+                                <div className="flex gap-2">
+                                    <Link href={`departments/${department.id}`}>
+                                        <Button>Bearbeiten</Button>
+                                    </Link>
+                                    <ConfirmDelete
+                                        onDelete={() => deleteDepartment(department.id)}
+                                        text={
+                                            deleting === department.id ? "Lösche..." : "Löschen"
+                                        }
+                                        confirmText="Bestätigen"
+                                        disabled={deleting === department.id}
+                                    />
+                                </div>
+                            </li>
+                        ))
+                    ) : (
+                        <p>Keine Abteilungen vorhanden.</p>
+                    )}
+                </ul>
+            )}
+            {/* Button to add new department */}
+            <div className="flex justify-end my-4">
+                <Button onClick={toggleModal}>Neue Abteilung hinzufügen</Button>
+            </div>
+
+            {/* Add Department Modal */}
+            <AddDepartmentModal
+                isOpen={isModalOpen}
+                onClose={toggleModal}
+                onAdd={fetchDepartments}
+            />
+        </div>
     );
 };
 
-export default DepartmentsAdminPage;
+export default Page;

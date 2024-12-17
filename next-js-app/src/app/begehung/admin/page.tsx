@@ -12,28 +12,28 @@ const Page = () => {
                     </Button>
                 </Link>
                 <Link href={"/begehung/admin/questions"}>
-                    <Button disabled className={"w-full text-xl"}>
+                    <Button className={"w-full text-xl"}>
                         Fragen
                     </Button>
                 </Link>
                 <Link href={"/begehung/admin/categories"}>
 
-                    <Button disabled className={"w-full text-xl"}>
+                    <Button  className={"w-full text-xl"}>
                         Kategorien
                     </Button>
                 </Link>
                 <Link href={"/begehung/admin/subcategories"}>
 
-                    <Button disabled className={"w-full text-xl"}>
+                    <Button  className={"w-full text-xl"}>
                         Unterkategorien
                     </Button>
                 </Link>
-                <Link  href={"/begehung/admin/admins"}>
+                {/*<Link  href={"/begehung/admin/admins"}>*/}
 
-                    <Button disabled red className={"w-full text-xl"}>
-                        Administratoren
-                    </Button>
-                </Link>
+                {/*    <Button disabled red className={"w-full text-xl"}>*/}
+                {/*        Administratoren*/}
+                {/*    </Button>*/}
+                {/*</Link>*/}
             </div>
 
         </div>

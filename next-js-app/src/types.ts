@@ -11,6 +11,13 @@ export type ReviewStatus = 'incomplete' | 'complete';
 export type ReviewItemStatusOptions = 'approved' | 'failed' | 'partially approved' | 'not reviewed';
 export type ResultColor = 'red' | 'yellow' | 'green';
 
+export const QUESTION_TYPES = [
+    "Beobachtung",
+    "Frage Personal",
+    "Frage ärztliches Personal",
+    "nicht anwendbar",
+];
+
 export type Category = CategoryRow
 
 export interface SubCategory extends Omit<SubcategoryRow, 'category'> {

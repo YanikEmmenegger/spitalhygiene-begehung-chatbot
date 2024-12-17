@@ -60,7 +60,7 @@ const MenuButtons = () => {
             {!loading && isAdmin && pathname.includes("begehung") && (
                 <Link className={"w-full"} href={"/begehung/admin"}>
                     <Button className={"w-full bg-neutral-600 hover:bg-neutral-700"}>
-                        admin
+                        Admin
                     </Button>
                 </Link>
             )}
