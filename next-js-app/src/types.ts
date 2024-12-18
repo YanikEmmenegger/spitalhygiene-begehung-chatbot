@@ -4,7 +4,7 @@ type CategoryRow = Database['public']['Tables']['category']['Row'];
 type SubcategoryRow = Database['public']['Tables']['subcategory']['Row'];
 type QuestionRow = Database['public']['Tables']['question']['Row'];
 type DepartmentRow = Database['public']['Tables']['department']['Row'];
-type QuestionTypesEnum = Database['public']['Enums']['question_types'];
+export type QuestionTypesEnum = Database['public']['Enums']['question_types'];
 type PersonTypeRow = Database['public']['Tables']['person_types']['Row'];
 
 export type ReviewStatus = 'incomplete' | 'complete';

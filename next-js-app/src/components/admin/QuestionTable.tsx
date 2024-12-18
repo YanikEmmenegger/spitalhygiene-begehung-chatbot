@@ -1,68 +1,60 @@
 'use client';
 
-import React, {FC} from "react";
-import ConfirmDelete from "@/components/ConfirmDelete";
-import Link from "next/link";
-import {Question} from "@/types";
-import {twMerge} from "tailwind-merge";
-
+import React from 'react';
+import Table from '@/components/Table';
+import {Question} from '@/types';
+import Button from '@/components/Button';
+import ConfirmDelete from '@/components/ConfirmDelete';
 
 interface QuestionTableProps {
     questions: Question[];
+    loading: boolean;
     deletingId: number | null;
+    onEdit: (question: Question) => void;
     onDelete: (id: number) => void;
+    emptyMessage?: string;
+    showEdit?: boolean;
 }
 
-const QuestionTable: FC<QuestionTableProps> = ({
-                                                   questions,
-                                                   deletingId,
-                                                   onDelete,
-                                               }) => {
+const QuestionTable: React.FC<QuestionTableProps> = ({
+                                                         questions,
+                                                         loading,
+                                                         deletingId,
+                                                         onEdit,
+                                                         onDelete,
+                                                         showEdit = true,
+                                                         emptyMessage = "Keine Fragen verfügbar."
+                                                     }) => {
     return (
-        <div className="overflow-x-auto">
-            <table className="min-w-full table-auto border-collapse border border-gray-300">
-                <thead>
-                <tr className="bg-gray-200">
-                    <th className="border p-2 text-left">Frage</th>
-                    <th className="border p-2 text-left">Typ</th>
-                    <th className="border p-2 text-left">Kategorie</th>
-                    <th className="border p-2 text-center"></th>
-                </tr>
-                </thead>
-                <tbody>
-                {questions.map((q) => (
-                    <tr key={q.id} className={twMerge("", q.critical ? "bg-amber-100" : "bg-neutral-50")}>
-                        <td className="border p-2">
-                            <Link href={"/begehung/admin/questions/" + q.id}>
-                                <div className={"w-full"}>
-                                    {q.question}
-                                </div>
-                            </Link>
-                        </td>
-                        <td className="border p-2">
-                            <p>{q.type}</p>
-                        </td>
-                        <td className="border p-2">
-                            <p className="font-bold">{q.subcategory.category.name}</p>
-                            <p>{q.subcategory.name}</p>
-                        </td>
-                        <td className="border p-2 text-right">
-                            <div className="flex justify-end items-center gap-2 w-[180px]">
-                                <div className="w-[100px] flex justify-end">
-                                    <ConfirmDelete
-                                        onDelete={() => onDelete(q.id)}
-                                        text={deletingId === q.id ? "Löschen..." : "Löschen"}
-                                        disabled={deletingId === q.id}
-                                        confirmText="Bestätigen"
-                                    />
-                                </div>
-                            </div>
-                        </td>
-                    </tr>
-                ))}
-                </tbody>
-            </table>
-        </div>
+        <Table
+            data={questions}
+            columns={[
+                {header: 'Name', accessor: (item) => item.question},
+                {header: 'Kategorie', accessor: (item) => item.subcategory.category.name},
+                {header: 'Unterkategorie', accessor: (item) => item.subcategory.name},
+                {header: 'Typ', accessor: (item) => item.type || 'N/A'},
+                {header: 'Kritisch', accessor: (item) => (item.critical ? 'Ja' : 'Nein')},
+            ]}
+            actions={(item) => (
+                <div className="flex gap-2 justify-end items-center">
+                    {
+                        showEdit && (
+                            <Button onClick={() => onEdit(item)}>
+                                Bearbeiten
+                            </Button>
+                        )
+                    }
+                    <ConfirmDelete
+                        onDelete={() => onDelete(item.id)}
+                        text={deletingId === item.id ? 'Löschen...' : 'Löschen'}
+                        confirmText="Bestätigen"
+                        disabled={deletingId === item.id}
+                    />
+                </div>
+            )}
+            loading={loading}
+            emptyMessage={emptyMessage}
+        />
     );
 };
 

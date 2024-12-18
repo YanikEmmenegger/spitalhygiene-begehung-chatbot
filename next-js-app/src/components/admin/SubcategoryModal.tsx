@@ -1,18 +1,18 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
+import React, { useEffect, useState } from 'react';
 import Modal from '@/components/Modal';
 import Button from '@/components/Button';
-import {Category} from '@/types';
+import { Category } from '@/types';
 
 interface SubcategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (name: string, categoryId: number) => void;
+    onSave: (name: string, categoryId: number) => Promise<void>;
     categories: Category[];
-    loading: boolean;
     initialName?: string;
     initialCategoryId?: number;
+    loading: boolean;
 }
 
 const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
@@ -20,76 +20,79 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
                                                                onClose,
                                                                onSave,
                                                                categories,
-                                                               loading,
                                                                initialName = '',
-                                                               initialCategoryId = undefined,
+                                                               initialCategoryId,
+                                                               loading,
                                                            }) => {
-    const [name, setName] = useState<string>(initialName);
-    const [selectedCategory, setSelectedCategory] = useState<number | ''>(initialCategoryId || '');
+    const [name, setName] = useState(initialName || '');
+    const [categoryId, setCategoryId] = useState<number | ''>(initialCategoryId || '');
     const [error, setError] = useState<string | null>(null);
 
-    // Reset state when modal opens
     useEffect(() => {
         setName(initialName || '');
-        setSelectedCategory(initialCategoryId || '');
+        setCategoryId(initialCategoryId || '');
         setError(null);
     }, [isOpen, initialName, initialCategoryId]);
 
-    const handleSave = () => {
-        if (!name.trim() || !selectedCategory) {
-            setError('Name und Kategorie sind erforderlich.');
+    const handleSave = async () => {
+        setError(null);
+        if (!name.trim()) {
+            setError('Der Name darf nicht leer sein.');
             return;
         }
-        onSave(name.trim(), Number(selectedCategory));
+        if (!categoryId) {
+            setError('Es muss eine Kategorie ausgewählt werden.');
+            return;
+        }
+        try {
+            await onSave(name.trim(), categoryId as number);
+            // If successful, close modal and reset fields
+            onClose();
+        } catch (err) {
+            // Show server error in the modal and keep it open
+            setError(String(err));
+        }
     };
 
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
-            <h2 className="text-xl font-bold mb-4">
-                {initialName ? 'Unterkategorie bearbeiten' : 'Neue Unterkategorie hinzufügen'}
+            <h2 className="text-xl font-semibold mb-4">
+                Unterkategorie
             </h2>
-
-            {/* Error Message */}
-            {error && <p className="text-red-500 mb-4">{error}</p>}
-
-            {/* Name Input */}
-            <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Name der Unterkategorie
-                </label>
-                <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full border p-2 rounded-md"
-                    placeholder="Name eingeben"
-                />
+            {error && <div className="text-red-500 mb-4">{error}</div>}
+            <div className="space-y-4">
+                <div>
+                    <label className="block text-sm font-medium mb-1">Name</label>
+                    <input
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="Unterkategoriename eingeben"
+                    />
+                </div>
+                <div>
+                    <label className="block text-sm font-medium mb-1">Kategorie</label>
+                    <select
+                        className="w-full border rounded px-3 py-2"
+                        value={categoryId}
+                        onChange={(e) => setCategoryId(Number(e.target.value) || '')}
+                    >
+                        <option value="">Kategorie auswählen</option>
+                        {categories.map((category) => (
+                            <option key={category.id} value={category.id}>
+                                {category.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
-
-            {/* Category Dropdown */}
-            <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Kategorie</label>
-                <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(Number(e.target.value))}
-                    className="w-full border p-2 rounded-md"
-                >
-                    <option value="">Bitte wählen...</option>
-                    {categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                            {category.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex gap-2 justify-end">
-                <Button onClick={onClose} className="bg-gray-300 hover:bg-gray-400">
+            <div className="flex justify-end mt-6 gap-2 items-center">
+                <Button onClick={onClose} disabled={loading} className="bg-gray-300 hover:bg-gray-400 min-w-[100px]">
                     Abbrechen
                 </Button>
-                <Button onClick={handleSave} disabled={loading} className="bg-blue-500 hover:bg-blue-600 text-white">
-                    {loading ? 'Speichern...' : initialName ? 'Änderungen speichern' : 'Hinzufügen'}
+                <Button onClick={handleSave} disabled={loading} className="min-w-[100px]">
+                    {loading ? 'Speichern...' : 'Speichern'}
                 </Button>
             </div>
         </Modal>

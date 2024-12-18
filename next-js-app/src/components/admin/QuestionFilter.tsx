@@ -1,156 +1,131 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import Button from "@/components/Button";
-import {Question, QUESTION_TYPES} from "@/types";
+import React, {KeyboardEvent, useState} from 'react';
+import Button from '@/components/Button';
+import {SubCategory} from '@/types';
 
 interface QuestionFilterProps {
-    questions: Question[];
-    onFilter: (filteredData: Question[]) => void;
+    subcategories: SubCategory[];
+    onFilterChange: (filters: {
+        search?: string;
+        category?: number;
+        subcategory?: number;
+        critical?: boolean;
+    }) => void;
 }
 
+const QuestionFilter: React.FC<QuestionFilterProps> = ({subcategories, onFilterChange}) => {
+    const [search, setSearch] = useState('');
+    const [categoryId, setCategoryId] = useState<number | ''>('');
+    const [subcategoryId, setSubcategoryId] = useState<number | ''>('');
+    const [critical, setCritical] = useState<boolean>(false);
 
+    // Derive categories from subcategories
+    const categoriesMap = subcategories.reduce((acc: { [catId: number]: string }, sc) => {
+        acc[sc.category.id] = sc.category.name;
+        return acc;
+    }, {});
+    const categories = Object.entries(categoriesMap).map(([id, name]) => ({id: Number(id), name}));
 
-const QuestionFilter: React.FC<QuestionFilterProps> = ({ questions, onFilter }) => {
-    const [search, setSearch] = useState<string>("");
-    const [selectedCategory, setSelectedCategory] = useState<string>("");
-    const [selectedSubcategory, setSelectedSubcategory] = useState<string>("");
-    const [selectedType, setSelectedType] = useState<string>("");
+    // Filter subcategories by selected category
+    const filteredSubcategories = categoryId
+        ? subcategories.filter(sc => sc.category.id === categoryId)
+        : subcategories;
 
-    const [categories, setCategories] = useState<string[]>([]);
-    const [subcategories, setSubcategories] = useState<string[]>([]);
-
-    // Extrahiere Kategorien und Unterkategorien dynamisch
-    useEffect(() => {
-        const uniqueCategories = new Set<string>();
-        const uniqueSubcategories = new Set<string>();
-
-        questions.forEach((q) => {
-            uniqueCategories.add(q.subcategory.category.name);
-            uniqueSubcategories.add(q.subcategory.name);
-        });
-
-        setCategories(Array.from(uniqueCategories));
-        setSubcategories(Array.from(uniqueSubcategories));
-    }, [questions]);
-
-    // Filter anwenden
-    const handleFilter = () => {
-        let filtered = questions;
-
-        if (search) {
-            filtered = filtered.filter((q) =>
-                q.question.toLowerCase().includes(search.toLowerCase())
-            );
+    const handleSearch = () => {
+        const filters: { search?: string; category?: number; subcategory?: number; critical?: boolean } = {};
+        if (search.trim()) filters.search = search.trim();
+        if (subcategoryId) {
+            filters.subcategory = subcategoryId as number;
+        } else if (categoryId) {
+            filters.category = categoryId as number;
         }
+        if (critical) filters.critical = true;
 
-        if (selectedCategory) {
-            filtered = filtered.filter(
-                (q) => q.subcategory.category.name === selectedCategory
-            );
-        }
-
-        if (selectedSubcategory) {
-            filtered = filtered.filter(
-                (q) => q.subcategory.name === selectedSubcategory
-            );
-        }
-
-        if (selectedType) {
-            filtered = filtered.filter((q) => q.type === selectedType);
-        }
-
-        onFilter(filtered);
+        onFilterChange(filters);
     };
 
-    // Filter zurücksetzen
+    const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            handleSearch();
+        }
+    };
+
     const resetFilters = () => {
-        setSearch("");
-        setSelectedCategory("");
-        setSelectedSubcategory("");
-        setSelectedType("");
-        onFilter(questions);
+        setSearch('');
+        setCategoryId('');
+        setSubcategoryId('');
+        setCritical(false);
+        onFilterChange({});
     };
 
     return (
-        <div className="p-4 rounded-md shadow-md bg-neutral-50 border border-gray-200">
-            <h2 className="text-lg font-semibold mb-4">Fragen filtern</h2>
+        <div className="flex flex-col md:flex-row md:items-end gap-2 my-4">
+            <div className="flex flex-col">
+                <label className="text-sm font-medium mb-1">Name</label>
+                <input
+                    type="text"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Fragen durchsuchen..."
+                    className="border rounded px-3 py-2"
+                />
+            </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {/* Suchfeld */}
-                <div>
-                    <label className="block text-sm font-medium">Frage suchen</label>
+            <div className="flex flex-col">
+                <label className="text-sm font-medium mb-1">Kategorie</label>
+                <select
+                    value={categoryId}
+                    onChange={(e) => {
+                        setCategoryId(Number(e.target.value) || '');
+                        // Reset subcategory if category changed
+                        setSubcategoryId('');
+                    }}
+                    className="border rounded px-3 py-2"
+                >
+                    <option value="">Alle Kategorien</option>
+                    {categories.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="flex flex-col">
+                <label className="text-sm font-medium mb-1">Unterkategorie</label>
+                <select
+                    value={subcategoryId}
+                    onChange={(e) => setSubcategoryId(Number(e.target.value) || '')}
+                    className="border rounded px-3 py-2"
+                >
+                    <option value="">Alle Unterkategorien</option>
+                    {filteredSubcategories.map((sc) => (
+                        <option key={sc.id} value={sc.id}>
+                            {sc.name}
+                        </option>
+                    ))}
+                </select>
+            </div>
+
+            <div className="flex flex-col">
+                <label className="text-sm font-medium mb-1">Kritisch</label>
+                <div className="flex items-center gap-2">
                     <input
-                        type="text"
-                        value={search}
-                        onChange={(e) => setSearch(e.target.value)}
-                        className="border p-2 rounded-md w-full"
-                        placeholder="Frage eingeben..."
+                        type="checkbox"
+                        checked={critical}
+                        onChange={(e) => setCritical(e.target.checked)}
+                        className="h-4 w-4"
                     />
-                </div>
-
-                {/* Kategorie Filter */}
-                <div>
-                    <label className="block text-sm font-medium">Kategorie</label>
-                    <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className="border p-2 rounded-md w-full"
-                    >
-                        <option value="">Alle Kategorien</option>
-                        {categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                                {cat}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Unterkategorie Filter */}
-                <div>
-                    <label className="block text-sm font-medium">Unterkategorie</label>
-                    <select
-                        value={selectedSubcategory}
-                        onChange={(e) => setSelectedSubcategory(e.target.value)}
-                        className="border p-2 rounded-md w-full"
-                    >
-                        <option value="">Alle Unterkategorien</option>
-                        {subcategories.map((sub) => (
-                            <option key={sub} value={sub}>
-                                {sub}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                {/* Frage Typ Filter */}
-                <div>
-                    <label className="block text-sm font-medium">Fragentyp</label>
-                    <select
-                        value={selectedType}
-                        onChange={(e) => setSelectedType(e.target.value)}
-                        className="border p-2 rounded-md w-full"
-                    >
-                        <option value="">Alle Fragentypen</option>
-                        {QUESTION_TYPES.map((type) => (
-                            <option key={type} value={type}>
-                                {type}
-                            </option>
-                        ))}
-                    </select>
+                    <span>Ja</span>
                 </div>
             </div>
 
-            {/* Filter Buttons */}
-            <div className="mt-4 flex gap-2">
-                <Button onClick={handleFilter} className="bg-lightGreen hover:bg-darkGreen">
-                    Filtern
-                </Button>
-                <Button
-                    onClick={resetFilters}
-                    className="bg-gray-300 hover:bg-gray-400"
-                >
-                    Filter aufheben
+            <div className="flex gap-2 mt-4 md:mt-0">
+                <Button onClick={handleSearch}>Suchen</Button>
+                <Button onClick={resetFilters} className="bg-gray-300 hover:bg-gray-400">
+                    Reset
                 </Button>
             </div>
         </div>

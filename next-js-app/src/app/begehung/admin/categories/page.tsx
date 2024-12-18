@@ -2,110 +2,128 @@
 
 import React, { useEffect, useState } from 'react';
 import axios, { AxiosError } from 'axios';
-import CategoryTable from '@/components/admin/CategoryTable';
-import CategoryModal from '@/components/admin/CategoryModal';
 import Button from '@/components/Button';
+import Table from '@/components/Table';
+import ConfirmDelete from '@/components/ConfirmDelete';
 import { Category } from '@/types';
+import CategoryModal from "@/components/admin/CategoryModal";
 
-const CategoryPage: React.FC = () => {
+const CategoryPage = () => {
     const [categories, setCategories] = useState<Category[]>([]);
+    const [pageError, setPageError] = useState<string | null>(null);
+    const [deleteError, setDeleteError] = useState<string | null>(null);
+    const [loading, setLoading] = useState<boolean>(true);
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-    const [loading, setLoading] = useState<boolean>(false);
     const [deletingId, setDeletingId] = useState<number | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [saving, setSaving] = useState<boolean>(false);
 
-    // Helper to handle Axios errors
-    const handleAxiosError = (e: unknown, fallbackMessage: string): string => {
-        const error = e as AxiosError<{ error: string }>;
-        return error.response?.data?.error || fallbackMessage;
-    };
+    useEffect(() => {
+        const fetchCategories = async () => {
+            setLoading(true);
+            setPageError(null);
+            try {
+                const response = await axios.get('/api/category');
+                setCategories(response.data.data || []);
+            } catch (err) {
+                const error = err as AxiosError<{ error: string }>;
 
-    // Fetch all categories
-    const fetchCategories = async () => {
-        setError(null);
-        try {
-            const response = await axios.get('/api/category');
-            setCategories(response.data.data || []);
-        } catch (e) {
-            setError(handleAxiosError(e, 'Fehler beim Laden der Kategorien.'));
-        }
-    };
-
-    // Save a category (create or update)
-    const saveCategory = async (name: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            if (editingCategory) {
-                // Update
-                await axios.put('/api/category', { id: editingCategory.id, name });
-                setCategories((prev) =>
-                    prev.map((cat) =>
-                        cat.id === editingCategory.id ? { ...cat, name } : cat
-                    )
-                );
-            } else {
-                // Create
-                const response = await axios.post('/api/category', { name });
-                setCategories((prev) => [...prev, response.data.data[0]]);
+                setPageError(error.response?.data?.error || 'Fehler beim Laden der Kategorien.');
+            } finally {
+                setLoading(false);
             }
-        } catch (e) {
-            setError(handleAxiosError(e, 'Fehler beim Speichern der Kategorie.'));
-        } finally {
-            setModalOpen(false);
-            setEditingCategory(null);
-            setLoading(false);
-        }
+        };
+        fetchCategories();
+    }, []);
+
+    const saveCategory = (name: string) => {
+        return new Promise<void>(async (resolve, reject) => {
+            setSaving(true);
+            try {
+                if (editingCategory) {
+                    // Update
+                    await axios.put('/api/category', {
+                        id: editingCategory.id,
+                        name,
+                    });
+                    setCategories((prev) =>
+                        prev.map((cat) => (cat.id === editingCategory.id ? { ...cat, name } : cat))
+                    );
+                } else {
+                    // Create
+                    const response = await axios.post('/api/category', { name });
+                    const newCat = response.data.data[0];
+                    setCategories((prev) => [...prev, newCat]);
+                }
+                resolve();
+            } catch (e) {
+                const error = e as AxiosError<{ error: string }>;
+                const errorMsg = error.response?.data?.error || 'Fehler beim Speichern der Kategorie.';
+                reject(errorMsg);
+            } finally {
+                setSaving(false);
+            }
+        });
     };
 
-    // Delete a category
-    const deleteCategory = async (id: number) => {
+    const handleDelete = async (id: number) => {
+        setDeleteError(null);
         setDeletingId(id);
-        setError(null);
         try {
             await axios.delete(`/api/category?id=${id}`);
-            setCategories((prev) => prev.filter((category) => category.id !== id));
+            setCategories((prev) => prev.filter((cat) => cat.id !== id));
         } catch (e) {
-            setError(handleAxiosError(e, 'Fehler beim Löschen der Kategorie.'));
+            const error = e as AxiosError<{ error: string }>;
+            setDeleteError(error.response?.data?.error || 'Fehler beim Löschen der Kategorie.');
         } finally {
             setDeletingId(null);
         }
     };
 
-    useEffect(() => {
-        fetchCategories();
-    }, []);
+    const openModal = (category?: Category) => {
+        setEditingCategory(category || null);
+        setModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setModalOpen(false);
+        setEditingCategory(null);
+    };
 
     return (
         <div className="container mx-auto py-4 space-y-6">
             <h1 className="text-2xl font-bold">Kategorien</h1>
-
-            {/* Error Message */}
-            {error && <div className="text-red-500">{error}</div>}
-
-            <Button onClick={() => setModalOpen(true)}>Neue Kategorie hinzufügen</Button>
-
-            <CategoryTable
-                categories={categories}
-                onEdit={(category) => {
-                    setEditingCategory(category);
-                    setModalOpen(true);
-                }}
-                onDelete={deleteCategory}
-                deletingId={deletingId}
-            />
-
-            <CategoryModal
-                isOpen={modalOpen}
-                onClose={() => {
-                    setModalOpen(false);
-                    setEditingCategory(null);
-                }}
-                onSave={saveCategory}
-                initialName={editingCategory?.name}
+            {pageError && <p className="text-red-500">{pageError}</p>}
+            {deleteError && <p className="text-red-500">{deleteError}</p>}
+            <Button onClick={() => openModal()}>Neue Kategorie hinzufügen</Button>
+            <Table
+                data={categories}
+                columns={[
+                    { header: 'Name', accessor: 'name' },
+                ]}
+                actions={(item) => (
+                    <div className="flex gap-2 justify-end items-center">
+                        <Button onClick={() => openModal(item)}>Bearbeiten</Button>
+                        <ConfirmDelete
+                            onDelete={() => handleDelete(item.id)}
+                            text={deletingId === item.id ? 'Löschen...' : 'Löschen'}
+                            confirmText="Bestätigen"
+                            disabled={deletingId === item.id}
+                        />
+                    </div>
+                )}
                 loading={loading}
+                emptyMessage="Keine Kategorien verfügbar."
             />
+            {modalOpen && (
+                <CategoryModal
+                    isOpen={modalOpen}
+                    onClose={closeModal}
+                    onSave={saveCategory}
+                    initialName={editingCategory?.name}
+                    loading={saving}
+                />
+            )}
         </div>
     );
 };

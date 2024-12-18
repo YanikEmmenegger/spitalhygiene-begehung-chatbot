@@ -1,3 +1,5 @@
+'use client';
+
 import {FC, useEffect} from "react";
 import {AnimatePresence, motion} from "framer-motion";
 import {twMerge} from "tailwind-merge";
@@ -7,9 +9,10 @@ interface ModalProps {
     children: React.ReactNode;
     isOpen: boolean;
     onClose: () => void; // Callback for closing the modal
+    size?: 'default' | 'large'; // Add a size prop to control modal width
 }
 
-const Modal: FC<ModalProps> = ({children, isOpen, onClose}) => {
+const Modal: FC<ModalProps> = ({children, isOpen, onClose, size = 'default'}) => {
     // Create a modal root element if it doesn't exist
     useEffect(() => {
         const modalRoot = document.getElementById("modal-root");
@@ -46,6 +49,9 @@ const Modal: FC<ModalProps> = ({children, isOpen, onClose}) => {
         visible: {opacity: 1, y: 0},
     };
 
+    // Determine modal width classes based on size prop
+    const widthClasses = size === 'large' ? 'max-w-4xl' : 'max-w-lg';
+
     return (
         <AnimatePresence>
             {isOpen && (
@@ -59,7 +65,7 @@ const Modal: FC<ModalProps> = ({children, isOpen, onClose}) => {
                 >
                     <motion.div
                         className={twMerge(
-                            "max-w-lg w-full bg-white p-8 shadow-lg relative",
+                            `${widthClasses} w-full bg-white p-8 shadow-lg relative`,
                             "h-full max-h-screen md:max-h-[95vh] md:h-auto overflow-y-auto"
                         )}
                         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside the modal
@@ -71,7 +77,6 @@ const Modal: FC<ModalProps> = ({children, isOpen, onClose}) => {
                     >
                         <div className={"mt-10"}>
                             {children}
-
                         </div>
                         <button
                             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
@@ -82,7 +87,8 @@ const Modal: FC<ModalProps> = ({children, isOpen, onClose}) => {
                     </motion.div>
                 </motion.div>
             )}
-        </AnimatePresence>)
+        </AnimatePresence>
+    );
 };
 
 export default Modal;
