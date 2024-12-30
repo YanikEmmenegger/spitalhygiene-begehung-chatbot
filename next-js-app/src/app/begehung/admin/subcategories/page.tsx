@@ -17,6 +17,7 @@ const SubcategoryPage = () => {
     const [modalOpen, setModalOpen] = useState<boolean>(false);
     const [editingSubcategory, setEditingSubcategory] = useState<SubCategory | null>(null);
     const [deletingId, setDeletingId] = useState<number | null>(null);
+    const [saving, setSaving] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -30,7 +31,6 @@ const SubcategoryPage = () => {
                 setSubcategories(subsRes.data.data || []);
             } catch (err) {
                 const error = err as AxiosError<{ error: string }>;
-
                 setPageError(error.response?.data?.error || 'Fehler beim Laden der Unterkategorien.');
             } finally {
                 setLoading(false);
@@ -39,8 +39,13 @@ const SubcategoryPage = () => {
         fetchData();
     }, []);
 
-    const saveSubcategory = async (name: string, categoryId: number) => {
+    /**
+     * Save a subcategory (create or update).
+     * Now also includes priority as an argument.
+     */
+    const saveSubcategory = (name: string, categoryId: number, priority: number) => {
         return new Promise<void>(async (resolve, reject) => {
+            setSaving(true);
             try {
                 if (editingSubcategory) {
                     // Update existing subcategory
@@ -48,7 +53,9 @@ const SubcategoryPage = () => {
                         id: editingSubcategory.id,
                         name,
                         category: categoryId,
+                        priority, // pass priority
                     });
+                    // Update local state
                     setSubcategories((prev) =>
                         prev.map((sub) =>
                             sub.id === editingSubcategory.id
@@ -56,17 +63,23 @@ const SubcategoryPage = () => {
                                     ...sub,
                                     name,
                                     category: categories.find((cat) => cat.id === categoryId)!,
+                                    priority,
                                 }
                                 : sub
                         )
                     );
                 } else {
                     // Create new subcategory
-                    const response = await axios.post('/api/subcategory', { name, category: categoryId });
+                    const response = await axios.post('/api/subcategory', {
+                        name,
+                        category: categoryId,
+                        priority, // pass priority if your backend allows it
+                    });
                     const newSub = {
                         ...response.data.data[0],
                         category: categories.find((cat) => cat.id === categoryId)!,
                     };
+                    // Optionally set newSub.priority = priority if the DB doesn't return it
                     setSubcategories((prev) => [...prev, newSub]);
                 }
                 resolve();
@@ -74,6 +87,8 @@ const SubcategoryPage = () => {
                 const error = e as AxiosError<{ error: string }>;
                 const errorMsg = error.response?.data?.error || 'Fehler beim Speichern der Unterkategorie.';
                 reject(errorMsg);
+            } finally {
+                setSaving(false);
             }
         });
     };
@@ -107,11 +122,14 @@ const SubcategoryPage = () => {
             <h1 className="text-2xl font-bold">Unterkategorien</h1>
             {pageError && <p className="text-red-500">{pageError}</p>}
             {deleteError && <p className="text-red-500">{deleteError}</p>}
+
             <Button onClick={() => openModal()}>Neue Unterkategorie hinzufügen</Button>
+
             <Table
                 data={subcategories}
                 columns={[
                     { header: 'Name', accessor: 'name' },
+                    { header: 'Priorität', accessor: 'priority' },
                     { header: 'Kategorie', accessor: (item) => item.category.name },
                 ]}
                 actions={(item) => (
@@ -128,6 +146,7 @@ const SubcategoryPage = () => {
                 loading={loading}
                 emptyMessage="Keine Unterkategorien verfügbar."
             />
+
             {modalOpen && (
                 <SubcategoryModal
                     isOpen={modalOpen}
@@ -136,7 +155,8 @@ const SubcategoryPage = () => {
                     categories={categories}
                     initialName={editingSubcategory?.name}
                     initialCategoryId={editingSubcategory?.category.id}
-                    loading={false}
+                    initialPriority={editingSubcategory?.priority ?? 0}
+                    loading={saving}
                 />
             )}
         </div>

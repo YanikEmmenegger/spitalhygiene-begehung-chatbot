@@ -59,13 +59,15 @@ export async function GET(req: NextRequest) {
           subcategory:subcategory (
             id,
             name,
+            priority,
             category:category (
               id,
-              name
+              name, 
+              priority
             )
           )
         `)
-        .not('id', 'in', excludeIds);
+        .not('id', 'in', excludeIds)//.order('category.priority', { ascending: true });
 
     // NEW: If "id" parameter exists, filter by ID
     if (id) {
@@ -93,6 +95,13 @@ export async function GET(req: NextRequest) {
         console.error('Error fetching questions:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
+    //order by category priority then by subcategory priority
+    questionsData.sort((a, b) => {
+        if (a.subcategory!.category!.priority === b.subcategory!.category!.priority) {
+            return a.subcategory!.priority - b.subcategory!.priority;
+        }
+        return a.subcategory!.category!.priority - b.subcategory!.category!.priority;
+    });
 
     return NextResponse.json({ data: questionsData }, { status: 200 });
 }

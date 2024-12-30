@@ -6,10 +6,25 @@ import {handleSupabaseError} from "@/app/api/handleSupabaseError";
 // GET Subcategories
 export async function GET() {
     const supabase = await createClient();
-    const {data, error} = await supabase.from("subcategory").select("id, name, category:category(*)");
+    const {
+        data,
+        error
+    } = await supabase.from("subcategory").select("id, name,priority, category:category(*)").order("priority", {ascending: true});
     if (error) {
         return handleSupabaseError(error);
     }
+
+    //order by category name
+    data.sort((a, b) => {
+        if (a.category!.name < b.category!.name) {
+            return -1;
+        }
+        if (a.category!.name > b.category!.name) {
+            return 1;
+        }
+        return 0;
+    });
+
     return NextResponse.json({data});
 }
 

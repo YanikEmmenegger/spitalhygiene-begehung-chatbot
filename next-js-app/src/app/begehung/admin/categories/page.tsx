@@ -6,7 +6,7 @@ import Button from '@/components/Button';
 import Table from '@/components/Table';
 import ConfirmDelete from '@/components/ConfirmDelete';
 import { Category } from '@/types';
-import CategoryModal from "@/components/admin/CategoryModal";
+import CategoryModal from '@/components/admin/CategoryModal';
 
 const CategoryPage = () => {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -18,6 +18,7 @@ const CategoryPage = () => {
     const [deletingId, setDeletingId] = useState<number | null>(null);
     const [saving, setSaving] = useState<boolean>(false);
 
+    // Fetch categories on mount
     useEffect(() => {
         const fetchCategories = async () => {
             setLoading(true);
@@ -27,7 +28,6 @@ const CategoryPage = () => {
                 setCategories(response.data.data || []);
             } catch (err) {
                 const error = err as AxiosError<{ error: string }>;
-
                 setPageError(error.response?.data?.error || 'Fehler beim Laden der Kategorien.');
             } finally {
                 setLoading(false);
@@ -36,22 +36,31 @@ const CategoryPage = () => {
         fetchCategories();
     }, []);
 
-    const saveCategory = (name: string) => {
+    // Save category (create or update)
+    const saveCategory = (name: string, priority: number) => {
         return new Promise<void>(async (resolve, reject) => {
             setSaving(true);
             try {
                 if (editingCategory) {
-                    // Update
+                    // Update existing category
                     await axios.put('/api/category', {
                         id: editingCategory.id,
                         name,
+                        priority, // new field
                     });
                     setCategories((prev) =>
-                        prev.map((cat) => (cat.id === editingCategory.id ? { ...cat, name } : cat))
+                        prev.map((cat) =>
+                            cat.id === editingCategory.id
+                                ? { ...cat, name, priority }
+                                : cat
+                        )
                     );
                 } else {
-                    // Create
-                    const response = await axios.post('/api/category', { name });
+                    // Create new category
+                    const response = await axios.post('/api/category', {
+                        name,
+                        priority, // might or might not be used in POST depending on your DB defaults
+                    });
                     const newCat = response.data.data[0];
                     setCategories((prev) => [...prev, newCat]);
                 }
@@ -66,6 +75,7 @@ const CategoryPage = () => {
         });
     };
 
+    // Delete category
     const handleDelete = async (id: number) => {
         setDeleteError(null);
         setDeletingId(id);
@@ -95,11 +105,14 @@ const CategoryPage = () => {
             <h1 className="text-2xl font-bold">Kategorien</h1>
             {pageError && <p className="text-red-500">{pageError}</p>}
             {deleteError && <p className="text-red-500">{deleteError}</p>}
+
             <Button onClick={() => openModal()}>Neue Kategorie hinzufügen</Button>
+
             <Table
                 data={categories}
                 columns={[
                     { header: 'Name', accessor: 'name' },
+                    { header: 'Priorität', accessor: 'priority' }, // new column
                 ]}
                 actions={(item) => (
                     <div className="flex gap-2 justify-end items-center">
@@ -115,12 +128,14 @@ const CategoryPage = () => {
                 loading={loading}
                 emptyMessage="Keine Kategorien verfügbar."
             />
+
             {modalOpen && (
                 <CategoryModal
                     isOpen={modalOpen}
                     onClose={closeModal}
                     onSave={saveCategory}
                     initialName={editingCategory?.name}
+                    initialPriority={editingCategory?.priority ?? 0}
                     loading={saving}
                 />
             )}

@@ -6,7 +6,7 @@ import {handleSupabaseError} from "@/app/api/handleSupabaseError";
 // GET Categories
 export async function GET() {
     const supabase = await createClient();
-    const {data, error} = await supabase.from("category").select("*");
+    const {data, error} = await supabase.from("category").select("*").order("priority", {ascending: true});
     if (error) {
         return handleSupabaseError(error);
     }

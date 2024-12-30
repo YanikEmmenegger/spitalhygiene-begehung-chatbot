@@ -26,6 +26,7 @@ export type Database = {
           created_at: string
           id: number
           name: string
+          priority: number
         }
         Insert: {
           created_at?: string
@@ -143,6 +144,7 @@ export type Database = {
           created_at: string
           id: number
           name: string
+          priority: number
         }
         Insert: {
           category: number
