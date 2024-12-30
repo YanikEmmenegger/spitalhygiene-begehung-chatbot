@@ -58,16 +58,33 @@ export async function DELETE(req: NextRequest) {
 // PUT Update Category
 export async function PUT(req: NextRequest) {
     if (!(await isAdmin())) {
-        return NextResponse.json({error: "Unauthorized"}, {status: 401});
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const {id, name} = await req.json();
-    if (!id || !name || !name.trim()) {
-        return NextResponse.json({error: "Category ID and name are required"}, {status: 400});
+
+    // Destructure 'priority' (instead of 'prio')
+    const { id, name, priority } = await req.json();
+
+    console.log("PUT /api/category =>", { id, name, priority });
+
+    // Basic validation:
+    // - we allow priority===0 in case the user wants to set it to zero
+    // - so we just check if priority is null/undefined
+    if (!id || !name || !name.trim() || priority == null) {
+        return NextResponse.json(
+            { error: "Category ID, name, and priority are required" },
+            { status: 400 }
+        );
     }
+
     const supabase = await createClient();
-    const {error} = await supabase.from("category").update({name}).eq("id", id);
+    const { error } = await supabase
+        .from("category")
+        .update({ name, priority })
+        .eq("id", id);
+
     if (error) {
         return handleSupabaseError(error);
     }
-    return NextResponse.json({message: "Category updated successfully"});
+
+    return NextResponse.json({ message: "Category updated successfully" });
 }

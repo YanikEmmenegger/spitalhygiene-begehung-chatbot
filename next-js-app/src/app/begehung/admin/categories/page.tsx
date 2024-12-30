@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
-import axios, { AxiosError } from 'axios';
+import React, {useEffect, useState} from 'react';
+import axios, {AxiosError} from 'axios';
 import Button from '@/components/Button';
 import Table from '@/components/Table';
 import ConfirmDelete from '@/components/ConfirmDelete';
-import { Category } from '@/types';
+import {Category} from '@/types';
 import CategoryModal from '@/components/admin/CategoryModal';
 
 const CategoryPage = () => {
@@ -28,7 +28,7 @@ const CategoryPage = () => {
                 setCategories(response.data.data || []);
             } catch (err) {
                 const error = err as AxiosError<{ error: string }>;
-                setPageError(error.response?.data?.error || 'Fehler beim Laden der Kategorien.');
+                setPageError(error.response?.data?.error || 'Fehler beim Laden der Hauptkategorien.');
             } finally {
                 setLoading(false);
             }
@@ -42,11 +42,12 @@ const CategoryPage = () => {
             setSaving(true);
             try {
                 if (editingCategory) {
+                    console.log(priority)
                     // Update existing category
                     await axios.put('/api/category', {
                         id: editingCategory.id,
                         name,
-                        priority, // new field
+                        priority,
                     });
                     setCategories((prev) =>
                         prev.map((cat) =>
@@ -102,11 +103,11 @@ const CategoryPage = () => {
 
     return (
         <div className="container mx-auto py-4 space-y-6">
-            <h1 className="text-2xl font-bold">Kategorien</h1>
+            <h1 className="text-2xl font-bold">Hauptkategorien</h1>
             {pageError && <p className="text-red-500">{pageError}</p>}
             {deleteError && <p className="text-red-500">{deleteError}</p>}
 
-            <Button onClick={() => openModal()}>Neue Kategorie hinzufügen</Button>
+            <Button onClick={() => openModal()}>Neue Hauptkategorie hinzufügen</Button>
 
             <Table
                 data={categories}

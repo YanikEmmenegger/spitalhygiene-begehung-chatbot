@@ -1,8 +1,27 @@
-import {Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType,} from "docx";
-import {ResultColor, Review, ReviewItem, ReviewItemStatusOptions} from "@/types";
-import {getDisplayNameofDate} from "@/utils/dateFormat";
+import {
+    Document,
+    Packer,
+    Paragraph,
+    Table,
+    TableCell,
+    TableRow,
+    WidthType,
+    ShadingType,
+    TextRun,
+} from "docx";
+import {
+    ResultColor,
+    Review,
+    ReviewItem,
+    ReviewItemStatusOptions,
+    Person,
+} from "@/types";
+import { getDisplayNameofDate } from "@/utils/dateFormat";
 
-function getStatus(status: ReviewItemStatusOptions): string {
+/**
+ * Convert reviewItem status to a readable string.
+ */
+function getStatusText(status: ReviewItemStatusOptions): string {
     switch (status) {
         case "approved":
             return "Erfüllt";
@@ -15,7 +34,30 @@ function getStatus(status: ReviewItemStatusOptions): string {
     }
 }
 
-function getResultColor(status: ResultColor): string {
+/**
+ * Return a background color (fill) for the status cell based on the status.
+ * - "approved" => light green
+ * - "failed" => light red
+ * - "partially approved" => light yellow
+ * - otherwise => white
+ */
+function getStatusFill(status: ReviewItemStatusOptions): string {
+    switch (status) {
+        case "approved":
+            return "CCFFCC"; // light green
+        case "failed":
+            return "FFCCCC"; // light red
+        case "partially approved":
+            return "FFFFCC"; // light yellow
+        default:
+            return "FFFFFF"; // white
+    }
+}
+
+/**
+ * Convert the overall review result color (red/yellow/green).
+ */
+function getResultColorIcon(status: ResultColor): string {
     switch (status) {
         case "red":
             return "🔴";
@@ -24,28 +66,192 @@ function getResultColor(status: ResultColor): string {
         case "green":
             return "🟢";
         default:
-            return "⚪"; // Default for no result
+            return "⚪"; // fallback
     }
 }
 
-export const generateWordFromTemplate = async (review: Review): Promise<Buffer> => {
-    const sortQuestionsByCategory = (reviewData: Review) => {
-        const categories: { [key: string]: ReviewItem[] } = {};
+/**
+ * Group ReviewItems by Category → Subcategory
+ * Produces a structure:
+ * {
+ *   [categoryName: string]: {
+ *     [subcatName: string]: ReviewItem[]
+ *   }
+ * }
+ */
+function groupByCategoryAndSubcategory(review: Review) {
+    const map: Record<string, Record<string, ReviewItem[]>> = {};
 
-        reviewData.reviewItems.forEach((item) => {
-            const categoryName = item.question.subcategory.category.name;
-            if (!categories[categoryName]) {
-                categories[categoryName] = [];
+    review.reviewItems.forEach((item) => {
+        const categoryName = item.question.subcategory.category.name;
+        const subcatName = item.question.subcategory.name;
+        if (!map[categoryName]) {
+            map[categoryName] = {};
+        }
+        if (!map[categoryName][subcatName]) {
+            map[categoryName][subcatName] = [];
+        }
+        map[categoryName][subcatName].push(item);
+    });
+
+    return map;
+}
+
+/**
+ * Format the array of Person(s) into a comma-separated string.
+ * If no persons, returns an empty string (blank).
+ */
+function formatPersons(persons: Person[]): string {
+    if (!persons || persons.length === 0) {
+        return "";
+    }
+    return persons
+        .map((p) => `${p.type} - ${getStatusText(p.status)}`)
+        .join(", ");
+}
+
+/**
+ * Provide a short legend for question types:
+ * B = Beobachtung
+ * FP = Frage Personal
+ * FÄ = Frage ärztliches Personal
+ * (And skip or treat "nicht anwendbar" as "N/A")
+ */
+function typeLegend(typeStr?: string | null): string {
+    if (!typeStr) return "N/A";
+    switch (typeStr) {
+        case "Beobachtung":
+            return "B";
+        case "Frage Personal":
+            return "FP";
+        case "Frage ärztliches Personal":
+            return "FÄ";
+        case "nicht anwendbar":
+            return "N/A";
+        default:
+            return typeStr;
+    }
+}
+
+/**
+ * Create a Table for the subcategory's items.
+ * Columns: Frage | Typ | Status | Personen | Kommentar
+ *
+ * If question is critical => highlight the entire row (except the status cell) in light yellow (FFFF99).
+ * The status cell is colored by status:
+ * - green if approved
+ * - red if failed
+ * - yellow if partially
+ */
+function buildSubcategoryTable(items: ReviewItem[]): Table {
+    // Header row
+    const headerRow = new TableRow({
+        children: [
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Frage", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Typ", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Status", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Person(en)", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Kommentar", bold: true })],
+                    }),
+                ],
+            }),
+        ],
+    });
+
+    // Data rows
+    const dataRows = items.map((item) => {
+        const { question, status, persons, comment } = item;
+        const isCritical = question.critical
+
+        // For columns other than status, if critical => shading fill "FFFF99"
+        const defaultShading = isCritical
+            ? {
+                fill: "FFFF99",
+                type: ShadingType.CLEAR,
+                color: "auto",
             }
-            categories[categoryName].push(item);
+            : undefined;
+
+        // For the status cell, color depending on the status:
+        const statusShading = {
+            fill: getStatusFill(status),
+            type: ShadingType.CLEAR,
+            color: "auto",
+        };
+
+        return new TableRow({
+            children: [
+                // Frage
+                new TableCell({
+                    children: [new Paragraph(question.question)],
+                    shading: defaultShading,
+                }),
+                // Typ
+                new TableCell({
+                    children: [new Paragraph(typeLegend(question.type))],
+                    shading: defaultShading,
+                }),
+                // Status
+                new TableCell({
+                    children: [new Paragraph(getStatusText(status))],
+                    shading: statusShading,
+                }),
+                // Personen
+                new TableCell({
+                    children: [new Paragraph(formatPersons(persons))],
+                    shading: defaultShading,
+                }),
+                // Kommentar
+                new TableCell({
+                    children: [new Paragraph(comment || "")],
+                    shading: defaultShading,
+                }),
+            ],
         });
+    });
 
-        return categories;
-    };
+    return new Table({
+        width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+        },
+        rows: [headerRow, ...dataRows],
+    });
+}
 
-    const categories = sortQuestionsByCategory(review);
+/**
+ * Main generator
+ */
+export async function generateWordFromTemplate(review: Review): Promise<Buffer> {
+    const groupedData = groupByCategoryAndSubcategory(review);
 
-    // Create the document
     const doc = new Document({
         styles: {
             default: {
@@ -56,7 +262,7 @@ export const generateWordFromTemplate = async (review: Review): Promise<Buffer> 
                     },
                     paragraph: {
                         spacing: {
-                            line: 276, // 1.5 spacing
+                            line: 276, // 1.5 line spacing
                         },
                     },
                 },
@@ -65,95 +271,65 @@ export const generateWordFromTemplate = async (review: Review): Promise<Buffer> 
         sections: [
             {
                 children: [
+                    // Title
                     new Paragraph({
                         text: `Bericht Begehungstool vom ${getDisplayNameofDate(review.date)}`,
                         heading: "Heading1",
                     }),
-                    new Paragraph({
-                        text: `Abteilung: ${review.department}`,
-                    }),
-                    new Paragraph({
-                        text: `Ergebnis: ${getResultColor(review.result!)}`,
-                    }),
-                    new Paragraph({
-                        text: `Erfüllt zu: ${review.resultPercentage}%`,
-                    }),
+                    // Department name
+                    new Paragraph({ text: `Abteilung: ${review.department.name}` }),
+                    // Result color icon
+                    new Paragraph({ text: `Ergebnis: ${getResultColorIcon(review.result!)}` }),
+                    // Percentage
+                    new Paragraph({ text: `Erfüllt zu: ${review.resultPercentage}%` }),
+                    // Critical Count
                     new Paragraph({
                         text: `Hauptabweichungen: ${review.criticalCount || "Keine"}`,
                     }),
+                    // Description
                     new Paragraph({
-                        text: `Zusammenfassung: ${review.resultDescription || "Keine Beschreibung"}`,
+                        text: `Zusammenfassung: ${review.resultDescription || ""}`,
                     }),
-                    ...Object.entries(categories).flatMap(([categoryName, reviewItems]) =>
-                        createCategoryTable(categoryName, reviewItems)
-                    ),
+                    new Paragraph({ text: " " }), // blank line
+                    // Legend
+                    new Paragraph({
+                        children: [
+                            new TextRun({
+                                text: "Legende Fragentyps: ",
+                                bold: true,
+                            }),
+                            new TextRun(
+                                "B = Beobachtung, FP = Frage Personal, FÄ = Frage ärztliches Personal, N/A = nicht anwendbar"
+                            ),
+                        ],
+                    }),
+                    new Paragraph({ text: " " }),
+
+                    // Loop over categories, subcategories
+                    ...Object.entries(groupedData).flatMap(([categoryName, subcatMap]) => {
+                        const catHeading = new Paragraph({
+                            text: categoryName,
+                            heading: "Heading2",
+                        });
+
+                        const subcatSections = Object.entries(subcatMap).flatMap(
+                            ([subcatName, items]) => {
+                                const scHeading = new Paragraph({
+                                    text: subcatName,
+                                    heading: "Heading3",
+                                });
+                                const table = buildSubcategoryTable(items);
+                                const spacer = new Paragraph({ text: " " });
+                                return [scHeading, table, spacer];
+                            }
+                        );
+
+                        return [catHeading, ...subcatSections];
+                    }),
                 ],
             },
         ],
     });
 
-    // Generate the Word document buffer
-    return await Packer.toBuffer(doc);
-};
-
-// Function to create a table for a category
-function createCategoryTable(
-    categoryName: string,
-    reviewItems: ReviewItem[]
-): (Paragraph | Table)[] {
-    const rows = [
-        // Header row
-        new TableRow({
-            children: [
-                new TableCell({
-                    children: [new Paragraph({text: "Frage",})],
-                }),
-                new TableCell({
-                    children: [new Paragraph({text: "Status"})],
-                }),
-                new TableCell({
-                    children: [new Paragraph({text: "Kommentar"})],
-                }),
-            ],
-        }),
-        // Data rows
-        ...reviewItems.map((item) =>
-            new TableRow({
-                children: [
-                    new TableCell({
-                        children: [new Paragraph({text: item.question.question})],
-                    }),
-                    new TableCell({
-                        children: [new Paragraph({text: getStatus(item.status)})],
-                    }),
-                    new TableCell({
-                        children: [
-                            new Paragraph({
-                                text: item.comment || "Keine Kommentare",
-                            }),
-                        ],
-                    }),
-                ],
-            })
-        ),
-    ];
-
-    const table = new Table({
-        width: {
-            size: 100,
-            type: WidthType.PERCENTAGE,
-        },
-        rows: rows,
-    });
-
-    return [
-        new Paragraph({
-            text: categoryName,
-            heading: "Heading2",
-        }),
-        table,
-        new Paragraph({
-            text: " ", // Spacer
-        }),
-    ];
+    return Packer.toBuffer(doc);
 }

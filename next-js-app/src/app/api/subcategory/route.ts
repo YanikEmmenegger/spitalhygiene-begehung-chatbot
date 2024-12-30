@@ -76,19 +76,30 @@ export async function DELETE(req: NextRequest) {
 // PUT Update Subcategory
 export async function PUT(req: NextRequest) {
     if (!(await isAdmin())) {
-        return NextResponse.json({error: "Unauthorized"}, {status: 401});
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const {id, name, category} = await req.json();
-    if (!id || !name || !category) {
-        return NextResponse.json({error: "Subcategory ID, name, and category are required"}, {status: 400});
+
+    // Expect `id, name, category, priority` from the request body
+    const { id, name, category, priority } = await req.json();
+
+    // Validate that they are all provided (treat `priority===0` as valid)
+    if (!id || !name || !name.trim() || !category || priority == null) {
+        return NextResponse.json(
+            { error: "Subcategory ID, name, category, and priority are required" },
+            { status: 400 }
+        );
     }
+
     const supabase = await createClient();
-    const {error} = await supabase
+
+    // Run the update
+    const { error } = await supabase
         .from("subcategory")
-        .update({name, category})
+        .update({ name, category, priority })
         .eq("id", id);
+
     if (error) {
         return handleSupabaseError(error);
     }
-    return NextResponse.json({message: "Subcategory updated successfully"});
+    return NextResponse.json({ message: "Subcategory updated successfully" });
 }

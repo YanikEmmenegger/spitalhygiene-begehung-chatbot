@@ -41,6 +41,9 @@ export async function POST(req: NextRequest) {
             return NextResponse.json("User not found", {status: 404});
         }
 
+        //print the full review object and all object within
+
+
         // Generate the PDF from the HTML template
         const docBuffer = await generateWordFromTemplate(review);
         //const excelBuffer = await generateExcelFromReview(review);
