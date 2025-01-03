@@ -58,13 +58,13 @@ export async function POST(req: NextRequest) {
 
         // Send the email with the attachments
         const {data, error} = await resend.emails.send({
-            from: "Begehungstool <begehung@insel.yanik.pro>",
+            from: `Begehungstool <begehung@${process.env.NEXT_PUBLIC_EMAIL_SENDER_DOMAIN}>`,
             to: [user.email],
             subject: "Bericht Begehungstool vom " + getDisplayNameofDate(review.date),
             react: EmailTemplate({firstName: userName, reportDate: getDisplayNameofDate(review.date)}) as React.ReactElement,
             attachments: [
                 {
-                    filename: `begehung${review.date}.docx`,
+                    filename: `begehung-${review.date}.docx`,
                     content: docBuffer.toString("base64"),
                     contentType: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 },

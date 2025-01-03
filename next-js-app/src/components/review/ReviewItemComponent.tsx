@@ -56,7 +56,7 @@ const ReviewItemComponent: FC<ReviewItemComponentProps> = ({reviewItem}) => {
                     disabled={review?.status === "complete"}
                     selected={reviewItem.status === "partially approved"}
                     onclick={() => handleStatusChange("partially approved")}
-                    option={"Teilweise erfüllt"}
+                    option={"Nicht Anwendbar"}
                 />
 
             </div>

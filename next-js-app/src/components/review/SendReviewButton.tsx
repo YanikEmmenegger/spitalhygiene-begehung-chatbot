@@ -10,7 +10,6 @@ import Button from "@/components/Button";
 
 const SendReviewButton = () => {
     const {review} = useReview();
-    console.log(review);
 
     const [status, setStatus] = useState<{ sent: boolean; error: string | null }>({
         sent: false,

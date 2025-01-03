@@ -28,7 +28,7 @@ function getStatusText(status: ReviewItemStatusOptions): string {
         case "failed":
             return "Nicht erfüllt";
         case "partially approved":
-            return "Teilweise erfüllt";
+            return "Nicht Anwendbar";
         default:
             return "Nicht beantwortet";
     }

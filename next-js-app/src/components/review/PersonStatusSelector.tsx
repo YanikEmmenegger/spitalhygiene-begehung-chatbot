@@ -23,7 +23,7 @@ const PersonStatusSelector: FC<PersonStatusSelectorProps> = ({ value, onChange }
             <ReviewItemStatus
                 selected={value === "partially approved"}
                 onclick={() => onChange("partially approved")}
-                option="Teilweise erfüllt"
+                option="Nicht Anwendbar"
             />
         </div>
     );
