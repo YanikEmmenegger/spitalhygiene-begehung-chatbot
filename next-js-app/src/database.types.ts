@@ -145,6 +145,8 @@ export type Database = {
           id: number
           name: string
           priority: number
+          link_name: string | null
+          link_url: string | null
         }
         Insert: {
           category: number

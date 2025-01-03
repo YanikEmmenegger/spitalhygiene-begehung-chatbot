@@ -8,6 +8,7 @@ import {
     WidthType,
     ShadingType,
     TextRun,
+    ExternalHyperlink,
 } from "docx";
 import {
     ResultColor,
@@ -188,7 +189,7 @@ function buildSubcategoryTable(items: ReviewItem[]): Table {
     // Data rows
     const dataRows = items.map((item) => {
         const { question, status, persons, comment } = item;
-        const isCritical = question.critical
+        const isCritical = question.critical;
 
         // For columns other than status, if critical => shading fill "FFFF99"
         const defaultShading = isCritical
@@ -247,7 +248,51 @@ function buildSubcategoryTable(items: ReviewItem[]): Table {
 }
 
 /**
- * Main generator
+ * Build a subcategory heading that optionally includes a clickable hyperlink
+ * if link_url is present.
+ *
+ * - If only link_url => display subcatName + " - hyperlink"
+ * - If link_name + link_url => use link_name as hyperlink text
+ * - If no link_url => just subcatName
+ */
+function buildSubcategoryHeading(
+    subcatName: string,
+    linkName?: string | null,
+    linkUrl?: string | null
+): Paragraph {
+    if (!linkUrl) {
+        // No link => just subcatName
+        return new Paragraph({
+            text: subcatName,
+            heading: "Heading3",
+        });
+    } else {
+        // We have linkUrl. We'll create a clickable ExternalHyperlink.
+        const hyperlinkText = linkName && linkName.trim() ? linkName : linkUrl;
+
+        return new Paragraph({
+            heading: "Heading3",
+            children: [
+                // subcatName + " - "
+                new TextRun({
+                    text: subcatName + " - ",
+                }),
+                new ExternalHyperlink({
+                    link: linkUrl, // actual URL
+                    children: [
+                        new TextRun({
+                            text: hyperlinkText,
+                            style: "Hyperlink", // docx built-in style for hyperlink
+                        }),
+                    ],
+                }),
+            ],
+        });
+    }
+}
+
+/**
+ * Main generator for Word doc
  */
 export async function generateWordFromTemplate(review: Review): Promise<Buffer> {
     const groupedData = groupByCategoryAndSubcategory(review);
@@ -307,20 +352,29 @@ export async function generateWordFromTemplate(review: Review): Promise<Buffer> 
 
                     // Loop over categories, subcategories
                     ...Object.entries(groupedData).flatMap(([categoryName, subcatMap]) => {
+                        // Category heading
                         const catHeading = new Paragraph({
                             text: categoryName,
                             heading: "Heading2",
                         });
 
+                        // Each subcategory
                         const subcatSections = Object.entries(subcatMap).flatMap(
                             ([subcatName, items]) => {
-                                const scHeading = new Paragraph({
-                                    text: subcatName,
-                                    heading: "Heading3",
-                                });
+                                // We'll pull linkName / linkUrl from the subcategory object
+                                // which is on the first item => item.question.subcategory.link_url / link_name
+                                const firstItem = items[0];
+                                const subcatObj = firstItem.question.subcategory;
+
+                                const subHeading = buildSubcategoryHeading(
+                                    subcatName,
+                                    subcatObj.link_name,
+                                    subcatObj.link_url
+                                );
+
                                 const table = buildSubcategoryTable(items);
                                 const spacer = new Paragraph({ text: " " });
-                                return [scHeading, table, spacer];
+                                return [subHeading, table, spacer];
                             }
                         );
 

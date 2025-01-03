@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import axios, { AxiosError } from 'axios';
-import Button from '@/components/Button';
-import Table from '@/components/Table';
-import ConfirmDelete from '@/components/ConfirmDelete';
-import SubcategoryModal from '@/components/admin/SubcategoryModal';
-import { Category, SubCategory } from '@/types';
+import React, { useEffect, useState } from "react";
+import axios, { AxiosError } from "axios";
+import Button from "@/components/Button";
+import Table from "@/components/Table";
+import ConfirmDelete from "@/components/ConfirmDelete";
+import SubcategoryModal from "@/components/admin/SubcategoryModal";
+import { Category, SubCategory } from "@/types";
 
 const SubcategoryPage = () => {
     const [categories, setCategories] = useState<Category[]>([]);
@@ -24,14 +24,14 @@ const SubcategoryPage = () => {
             try {
                 setLoading(true);
                 const [catsRes, subsRes] = await Promise.all([
-                    axios.get('/api/category'),
-                    axios.get('/api/subcategory'),
+                    axios.get("/api/category"),
+                    axios.get("/api/subcategory"),
                 ]);
                 setCategories(catsRes.data.data || []);
                 setSubcategories(subsRes.data.data || []);
             } catch (err) {
                 const error = err as AxiosError<{ error: string }>;
-                setPageError(error.response?.data?.error || 'Fehler beim Laden der Unterkategorien.');
+                setPageError(error.response?.data?.error || "Fehler beim Laden der Unterkategorien.");
             } finally {
                 setLoading(false);
             }
@@ -41,19 +41,27 @@ const SubcategoryPage = () => {
 
     /**
      * Save a subcategory (create or update).
-     * Now also includes priority as an argument.
+     * Includes link_name, link_url as well.
      */
-    const saveSubcategory = (name: string, categoryId: number, priority: number) => {
+    const saveSubcategory = (
+        name: string,
+        categoryId: number,
+        priority: number,
+        linkName: string | null,
+        linkUrl: string | null
+    ) => {
         return new Promise<void>(async (resolve, reject) => {
             setSaving(true);
             try {
                 if (editingSubcategory) {
                     // Update existing subcategory
-                    await axios.put('/api/subcategory', {
+                    await axios.put("/api/subcategory", {
                         id: editingSubcategory.id,
                         name,
                         category: categoryId,
-                        priority, // pass priority
+                        priority,
+                        link_name: linkName,
+                        link_url: linkUrl,
                     });
                     // Update local state
                     setSubcategories((prev) =>
@@ -62,30 +70,33 @@ const SubcategoryPage = () => {
                                 ? {
                                     ...sub,
                                     name,
-                                    category: categories.find((cat) => cat.id === categoryId)!,
                                     priority,
+                                    link_name: linkName || null,
+                                    link_url: linkUrl || null,
+                                    category: categories.find((cat) => cat.id === categoryId)!,
                                 }
                                 : sub
                         )
                     );
                 } else {
                     // Create new subcategory
-                    const response = await axios.post('/api/subcategory', {
+                    const response = await axios.post("/api/subcategory", {
                         name,
                         category: categoryId,
-                        priority, // pass priority if your backend allows it
+                        priority,
+                        link_name: linkName,
+                        link_url: linkUrl,
                     });
                     const newSub = {
                         ...response.data.data[0],
                         category: categories.find((cat) => cat.id === categoryId)!,
                     };
-                    // Optionally set newSub.priority = priority if the DB doesn't return it
                     setSubcategories((prev) => [...prev, newSub]);
                 }
                 resolve();
             } catch (e) {
                 const error = e as AxiosError<{ error: string }>;
-                const errorMsg = error.response?.data?.error || 'Fehler beim Speichern der Unterkategorie.';
+                const errorMsg = error.response?.data?.error || "Fehler beim Speichern der Unterkategorie.";
                 reject(errorMsg);
             } finally {
                 setSaving(false);
@@ -101,7 +112,7 @@ const SubcategoryPage = () => {
             setSubcategories((prev) => prev.filter((sub) => sub.id !== id));
         } catch (e) {
             const error = e as AxiosError<{ error: string }>;
-            setDeleteError(error.response?.data?.error || 'Fehler beim Löschen der Unterkategorie.');
+            setDeleteError(error.response?.data?.error || "Fehler beim Löschen der Unterkategorie.");
         } finally {
             setDeletingId(null);
         }
@@ -128,16 +139,26 @@ const SubcategoryPage = () => {
             <Table
                 data={subcategories}
                 columns={[
-                    { header: 'Name', accessor: 'name' },
-                    { header: 'Priorität', accessor: 'priority' },
-                    { header: 'Kategorie', accessor: (item) => item.category.name },
+                    { header: "Name", accessor: "name" },
+                    { header: "Priorität", accessor: "priority" },
+                    {
+                        header: "Kategorie",
+                        accessor: (item) => item.category?.name || "Keine",
+                    },
+                    {
+                        header: "Link",
+                        accessor: (item) =>
+                            item.link_name && item.link_url
+                                ? `${item.link_name} (${item.link_url})`
+                                : "",
+                    },
                 ]}
                 actions={(item) => (
                     <div className="flex gap-2 justify-end items-center">
                         <Button onClick={() => openModal(item)}>Bearbeiten</Button>
                         <ConfirmDelete
                             onDelete={() => handleDelete(item.id)}
-                            text={deletingId === item.id ? 'Löschen...' : 'Löschen'}
+                            text={deletingId === item.id ? "Löschen..." : "Löschen"}
                             confirmText="Bestätigen"
                             disabled={deletingId === item.id}
                         />
@@ -156,6 +177,8 @@ const SubcategoryPage = () => {
                     initialName={editingSubcategory?.name}
                     initialCategoryId={editingSubcategory?.category.id}
                     initialPriority={editingSubcategory?.priority ?? 0}
+                    initialLinkName={editingSubcategory?.link_name ?? null}
+                    initialLinkUrl={editingSubcategory?.link_url ?? null}
                     loading={saving}
                 />
             )}

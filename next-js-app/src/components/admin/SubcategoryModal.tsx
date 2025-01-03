@@ -1,19 +1,27 @@
-'use client';
+"use client";
 
-import React, { useEffect, useState } from 'react';
-import Modal from '@/components/Modal';
-import Button from '@/components/Button';
-import { Category } from '@/types';
+import React, { useEffect, useState } from "react";
+import Modal from "@/components/Modal";
+import Button from "@/components/Button";
+import { Category } from "@/types";
 
 interface SubcategoryModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (name: string, categoryId: number, priority: number) => Promise<void>;
+    onSave: (
+        name: string,
+        categoryId: number,
+        priority: number,
+        linkName: string | null,
+        linkUrl: string | null
+    ) => Promise<void>;
     categories: Category[];
     initialName?: string;
     initialCategoryId?: number;
-    /** New field for subcategory priority */
     initialPriority?: number;
+    /** New fields for link name/url (nullable). */
+    initialLinkName?: string | null;
+    initialLinkUrl?: string | null;
     loading: boolean;
 }
 
@@ -22,36 +30,48 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
                                                                onClose,
                                                                onSave,
                                                                categories,
-                                                               initialName = '',
+                                                               initialName = "",
                                                                initialCategoryId,
                                                                initialPriority = 0,
+                                                               initialLinkName = null,
+                                                               initialLinkUrl = null,
                                                                loading,
                                                            }) => {
     const [name, setName] = useState(initialName);
-    const [categoryId, setCategoryId] = useState<number | ''>(initialCategoryId || '');
-    /**
-     * We'll store the priority as a string to avoid "NaN" issues if user clears the field.
-     */
+    const [categoryId, setCategoryId] = useState<number | "">(
+        initialCategoryId || ""
+    );
     const [priorityStr, setPriorityStr] = useState<string>(String(initialPriority));
+    const [linkName, setLinkName] = useState<string>(initialLinkName || "");
+    const [linkUrl, setLinkUrl] = useState<string>(initialLinkUrl || "");
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         if (isOpen) {
             setName(initialName);
-            setCategoryId(initialCategoryId || '');
+            setCategoryId(initialCategoryId || "");
             setPriorityStr(String(initialPriority));
+            setLinkName(initialLinkName || "");
+            setLinkUrl(initialLinkUrl || "");
             setError(null);
         }
-    }, [isOpen, initialName, initialCategoryId, initialPriority]);
+    }, [
+        isOpen,
+        initialName,
+        initialCategoryId,
+        initialPriority,
+        initialLinkName,
+        initialLinkUrl,
+    ]);
 
     const handleSave = async () => {
         setError(null);
         if (!name.trim()) {
-            setError('Der Name darf nicht leer sein.');
+            setError("Der Name darf nicht leer sein.");
             return;
         }
         if (!categoryId) {
-            setError('Es muss eine Kategorie ausgewählt werden.');
+            setError("Es muss eine Kategorie ausgewählt werden.");
             return;
         }
 
@@ -60,7 +80,13 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
         const safePriority = Number.isNaN(parsedPriority) ? 0 : parsedPriority;
 
         try {
-            await onSave(name.trim(), categoryId as number, safePriority);
+            await onSave(
+                name.trim(),
+                categoryId as number,
+                safePriority,
+                linkName?.trim() || null,
+                linkUrl?.trim() || null
+            );
             onClose();
         } catch (err) {
             // Show server error in the modal and keep it open
@@ -71,12 +97,12 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
     return (
         <Modal isOpen={isOpen} onClose={onClose}>
             <h2 className="text-xl font-semibold mb-4">
-                {initialName ? 'Unterkategorie bearbeiten' : 'Neue Unterkategorie hinzufügen'}
+                {initialName ? "Unterkategorie bearbeiten" : "Neue Unterkategorie hinzufügen"}
             </h2>
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
             <div className="space-y-4">
-                {/* Name field */}
+                {/* Name */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Name</label>
                     <input
@@ -94,7 +120,7 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
                     <select
                         className="w-full border rounded px-3 py-2"
                         value={categoryId}
-                        onChange={(e) => setCategoryId(Number(e.target.value) || '')}
+                        onChange={(e) => setCategoryId(Number(e.target.value) || "")}
                     >
                         <option value="">Kategorie auswählen</option>
                         {categories.map((category) => (
@@ -105,7 +131,7 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
                     </select>
                 </div>
 
-                {/* Priority field */}
+                {/* Priority */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Priorität</label>
                     <input
@@ -114,6 +140,30 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
                         value={priorityStr}
                         onChange={(e) => setPriorityStr(e.target.value)}
                         placeholder="z.B. 1"
+                    />
+                </div>
+
+                {/* Link Name */}
+                <div>
+                    <label className="block text-sm font-medium mb-1">Link Name (optional)</label>
+                    <input
+                        type="text"
+                        value={linkName}
+                        onChange={(e) => setLinkName(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="z.B. Hier klicken"
+                    />
+                </div>
+
+                {/* Link URL */}
+                <div>
+                    <label className="block text-sm font-medium mb-1">Link URL (optional)</label>
+                    <input
+                        type="url"
+                        value={linkUrl}
+                        onChange={(e) => setLinkUrl(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
+                        placeholder="z.B. https://example.com"
                     />
                 </div>
             </div>
@@ -127,7 +177,7 @@ const SubcategoryModal: React.FC<SubcategoryModalProps> = ({
                     Abbrechen
                 </Button>
                 <Button onClick={handleSave} disabled={loading} className="min-w-[100px]">
-                    {loading ? 'Speichern...' : 'Speichern'}
+                    {loading ? "Speichern..." : "Speichern"}
                 </Button>
             </div>
         </Modal>

@@ -60,6 +60,7 @@ export async function GET(req: NextRequest) {
             id,
             name,
             priority,
+            link_name, link_url,
             category:category (
               id,
               name, 
