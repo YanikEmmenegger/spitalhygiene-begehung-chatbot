@@ -1,13 +1,14 @@
-'use client';
-import React, {useEffect, useState} from 'react';
-import Button from '@/components/Button';
-import Input from '@/components/Input';
-import {login} from '@/app/login/LoginActions';
-import Image from 'next/image';
-import {useRouter} from 'next/navigation';
-import axios from 'axios';
+'use client'; // Enables client-side rendering
+import React, { useEffect, useState } from 'react'; // Import React and hooks
+import Button from '@/components/Button'; // Import Button component
+import Input from '@/components/Input'; // Import Input component
+import { login } from '@/app/login/LoginActions'; // Import login action
+import Image from 'next/image'; // Import Image component for optimized images
+import { useRouter } from 'next/navigation'; // Import router for navigation
+import axios from 'axios'; // Import axios for HTTP requests
 
 const LoginForm = () => {
+    // State hooks for managing form inputs, messages, and loading status
     const [email, setEmail] = useState('');
     const [otp, setOtp] = useState('');
     const [message, setMessage] = useState('');
@@ -15,15 +16,16 @@ const LoginForm = () => {
     const [loading, setLoading] = useState(false);
     const [showOtpField, setShowOtpField] = useState(false);
 
-    const router = useRouter();
+    const router = useRouter(); // Router instance for navigation
 
     const validDomains: string[] =
-        (process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as []) || [
+        (process.env.NEXT_PUBLIC_ALLOWED_DOMAINS as unknown as []) || [ // Allowed email domains
             'insel.ch',
             'hotmail.com',
             'rolshoven.io',
         ];
 
+    // Check for error query parameter in URL on component mount
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.has('error')) {
@@ -31,70 +33,73 @@ const LoginForm = () => {
         }
     }, []);
 
+    // Function to validate email format and domain
     const validateEmail = (email: string) => {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Regex for email validation
         if (!emailRegex.test(email.toLowerCase())) {
-            return 'Bitte geben Sie eine gültige E-Mail-Adresse ein';
+            return 'Bitte geben Sie eine gültige E-Mail-Adresse ein'; // Error message for invalid email
         }
 
-        const domain = email.split('@')[1];
+        const domain = email.split('@')[1]; // Extract domain from email
         if (!validDomains.includes(domain)) {
-            return `Bitte verwenden Sie eine E-Mail-Adresse mit @insel.ch`;
+            return `Bitte verwenden Sie eine E-Mail-Adresse mit @insel.ch`; // Error message for invalid domain
         }
 
-        return '';
+        return ''; // No error
     };
 
+    // Handle form submission for email login
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const validationError = validateEmail(email);
+        const validationError = validateEmail(email); // Validate email
         setMessage('');
         setError('');
 
         if (validationError) {
-            setError(validationError);
+            setError(validationError); // Set validation error
             return;
         }
 
-        setLoading(true);
-        const success = await login(email); // Use the action for email login
+        setLoading(true); // Start loading state
+        const success = await login(email); // Send email login request
         if (success) {
             setMessage(
                 'Anmelde-Link wurde gesendet. Bitte überprüfen Sie Ihr E-Mail-Postfach oder geben Sie den per E-Mail erhaltenen OTP ein.',
             );
             setError('');
-            setShowOtpField(true); // Show OTP field
+            setShowOtpField(true); // Show OTP input field
         } else {
-            setError('Fehler beim Senden des Anmelde-Links');
+            setError('Fehler beim Senden des Anmelde-Links'); // Set error for failed login
         }
-        setLoading(false);
+        setLoading(false); // End loading state
     };
 
+    // Handle OTP verification
     const handleVerifyOtp = async () => {
         setMessage('');
         setError('');
         setLoading(true);
 
         try {
-            const response = await axios.get('/api/auth/confirm', {
+            const response = await axios.get('/api/auth/confirm', { // Verify OTP via API
                 params: {
                     email,
                     token: otp,
-                    type: 'email', // Ensure this matches your backend's type
+                    type: 'email', // Ensure type matches backend
                 },
             });
 
             if (response.status === 200) {
-                setMessage('Erfolgreich eingeloggt!');
-                router.replace('/'); // Redirect to /bot
+                setMessage('Erfolgreich eingeloggt!'); // Successful login message
+                router.replace('/'); // Redirect to home
             } else {
-                setError('Ungültiger OTP. Bitte erneut versuchen.');
+                setError('Ungültiger OTP. Bitte erneut versuchen.'); // Error for invalid OTP
             }
         } catch (err) {
-            setError('Ungültiger OTP. Bitte erneut versuchen.');
+            setError('Ungültiger OTP. Bitte erneut versuchen.'); // Handle error
             console.error(err);
         } finally {
-            setLoading(false);
+            setLoading(false); // End loading state
         }
     };
 
@@ -103,7 +108,7 @@ const LoginForm = () => {
             <Image
                 width={150}
                 height={150}
-                src={'/Logo.svg'}
+                src={'/Logo.svg'} // Application logo
                 alt={'Logo Inselspital'}
                 className={'h-12 w-auto'}
             />
@@ -124,7 +129,7 @@ const LoginForm = () => {
                         />
                     </div>
 
-                    {showOtpField && (
+                    {showOtpField && ( // Render OTP field conditionally
                         <div className="mb-4">
                             <label htmlFor="otp" className="block text-gray-600 mb-2">
                                 OTP
@@ -141,7 +146,7 @@ const LoginForm = () => {
                     )}
 
                     <div className="flex justify-center">
-                        {!showOtpField ? (
+                        {!showOtpField ? ( // Conditional rendering for OTP vs. Login button
                             <Button disabled={loading} type="submit" className="w-full">
                                 {loading ? 'lädt...' : 'Anmelden'}
                             </Button>
@@ -152,11 +157,11 @@ const LoginForm = () => {
                         )}
                     </div>
                 </form>
-                <p className="text-red-500 text-sm mt-2">{error}</p>
-                <p className="text-green-500 text-center mt-4">{message}</p>
+                <p className="text-red-500 text-sm mt-2">{error}</p> {/* Display error messages */}
+                <p className="text-green-500 text-center mt-4">{message}</p> {/* Display success messages */}
             </div>
         </div>
     );
 };
 
-export default LoginForm;
+export default LoginForm; // Export the LoginForm component

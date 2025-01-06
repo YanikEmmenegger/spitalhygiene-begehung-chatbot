@@ -1,29 +1,33 @@
 'use client';
 
+// Import React and types for defining props
 import React, { ReactNode } from 'react';
 
+// Interface for defining a column in the table
 interface ColumnDefinition<T> {
-    header: string;
-    accessor: keyof T | ((item: T) => ReactNode);
-    isAction?: boolean;
+    header: string; // Column header text
+    accessor: keyof T | ((item: T) => ReactNode); // Accessor to retrieve or compute cell content
+    isAction?: boolean; // Optional flag for action columns
 }
 
+// Interface for table props
 interface TableProps<T> {
-    data: T[];
-    columns: ColumnDefinition<T>[];
-    actions?: (item: T) => ReactNode;
-    emptyMessage?: string;
-    loading?: boolean;
-    skeletonRowCount?: number;
+    data: T[]; // Array of data to display in the table
+    columns: ColumnDefinition<T>[]; // List of column definitions
+    actions?: (item: T) => ReactNode; // Optional callback to render actions for each row
+    emptyMessage?: string; // Message to display when no data is available
+    loading?: boolean; // Indicates if data is being loaded
+    skeletonRowCount?: number; // Number of skeleton rows to display during loading
 }
 
+// Generic table component
 const Table = <T,>({
                        data,
                        columns,
                        actions,
-                       emptyMessage = 'Keine Daten verfügbar.',
-                       loading = false,
-                       skeletonRowCount = 5,
+                       emptyMessage = 'Keine Daten verfügbar.', // Default empty message
+                       loading = false, // Default loading state
+                       skeletonRowCount = 5, // Default skeleton row count
                    }: TableProps<T>) => {
     return (
         <div className="overflow-x-auto rounded-md shadow-md border border-gray-200">
@@ -39,6 +43,7 @@ const Table = <T,>({
                 </tr>
                 </thead>
                 <tbody>
+                {/* Render skeleton rows if loading */}
                 {loading ? (
                     Array.from({ length: skeletonRowCount }).map((_, rowIndex) => (
                         <tr key={rowIndex} className="hover:bg-gray-50">
@@ -55,12 +60,13 @@ const Table = <T,>({
                         </tr>
                     ))
                 ) : data.length > 0 ? (
+                    // Render table rows with data
                     data.map((item, rowIndex) => (
                         <tr key={rowIndex} className="hover:bg-gray-50">
                             {columns.map((column, colIndex) => (
                                 <td key={colIndex} className="p-3 border-b">
                                     {typeof column.accessor === 'function'
-                                        ? column.accessor(item)
+                                        ? column.accessor(item) // Compute cell content using callback
                                         : (item[column.accessor] as ReactNode)}
                                 </td>
                             ))}
@@ -72,6 +78,7 @@ const Table = <T,>({
                         </tr>
                     ))
                 ) : (
+                    // Render empty message if no data
                     <tr>
                         <td
                             colSpan={columns.length + (actions ? 1 : 0)}
@@ -87,4 +94,4 @@ const Table = <T,>({
     );
 };
 
-export default Table;
+export default Table; // Export the Table component for use in other parts of the application

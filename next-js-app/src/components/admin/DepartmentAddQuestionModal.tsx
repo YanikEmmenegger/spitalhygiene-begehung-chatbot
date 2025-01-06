@@ -1,11 +1,11 @@
 'use client';
 
-import React, {useEffect, useMemo, useState} from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Modal from '@/components/Modal';
 import Button from '@/components/Button';
-import {Question, SubCategory} from '@/types';
+import { Question, SubCategory } from '@/types';
 import QuestionFilter from '@/components/admin/QuestionFilter';
-import {AxiosError} from "axios";
+import { AxiosError } from "axios";
 
 interface Filters {
     search?: string;
@@ -15,12 +15,12 @@ interface Filters {
 }
 
 interface DepartmentAddQuestionsModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    allQuestions: Question[];
-    connectedQuestions: Question[];
-    subcategories: SubCategory[];
-    onAdd: (selectedIds: number[]) => Promise<void>;
+    isOpen: boolean; // Controls the modal's visibility
+    onClose: () => void; // Callback to close the modal
+    allQuestions: Question[]; // List of all available questions
+    connectedQuestions: Question[]; // List of questions already connected to the department
+    subcategories: SubCategory[]; // List of subcategories for filtering
+    onAdd: (selectedIds: number[]) => Promise<void>; // Callback to add selected questions
 }
 
 const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = ({
@@ -29,24 +29,22 @@ const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = 
                                                                                      allQuestions,
                                                                                      connectedQuestions,
                                                                                      subcategories,
-                                                                                     onAdd
+                                                                                     onAdd,
                                                                                  }) => {
+    // State for managing filters
     const [filters, setFilters] = useState<Filters>({});
     const [filteredQuestions, setFilteredQuestions] = useState<Question[]>([]);
     const [modalError, setModalError] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
     const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
-    // Memoize disconnectedQuestions so it's stable and doesn't change every render
+    // Compute the list of questions not already connected
     const disconnectedQuestions = useMemo(() => {
         const connectedIds = connectedQuestions.map(q => q.id);
         return allQuestions.filter(q => !connectedIds.includes(q.id));
     }, [allQuestions, connectedQuestions]);
 
-    // const hasFilters = () => {
-    //     return !!(filters.search?.trim() || filters.category || filters.subcategory || filters.critical);
-    // };
-
+    // Apply filters locally to the disconnectedQuestions
     const applyLocalFilters = (): Question[] => {
         let filtered = [...disconnectedQuestions];
 
@@ -68,6 +66,7 @@ const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = 
         return filtered;
     };
 
+    // Reset the modal state when it opens
     useEffect(() => {
         if (isOpen) {
             setFilters({});
@@ -77,16 +76,20 @@ const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = 
         }
     }, [isOpen]);
 
-    // Re-run filtering whenever filters or disconnectedQuestions change
+    // Update the filtered questions whenever filters or disconnectedQuestions change
     useEffect(() => {
         const result = applyLocalFilters();
         setFilteredQuestions(result);
     }, [filters, disconnectedQuestions]);
 
+    // Handle question selection/deselection
     const handleSelect = (qId: number) => {
-        setSelectedIds(prev => prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]);
+        setSelectedIds(prev =>
+            prev.includes(qId) ? prev.filter(id => id !== qId) : [...prev, qId]
+        );
     };
 
+    // Handle adding selected questions
     const handleAdd = async () => {
         if (selectedIds.length === 0) {
             setModalError('Bitte wählen Sie mindestens eine Frage aus.');
@@ -96,7 +99,7 @@ const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = 
         setModalError(null);
         try {
             await onAdd(selectedIds);
-            onClose();
+            onClose(); // Close the modal after successful addition
         } catch (e) {
             const error = e as AxiosError<{ error: string }>;
             setModalError(error.response?.data?.error || 'Fehler beim Hinzufügen der Fragen.');
@@ -110,11 +113,13 @@ const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = 
             <h2 className="text-xl font-bold mb-4">Fragen hinzufügen</h2>
             {modalError && <p className="text-red-500 mb-4">{modalError}</p>}
 
+            {/* Filter Component */}
             <QuestionFilter
                 subcategories={subcategories}
-                onFilterChange={(f) => setFilters(f)}
+                onFilterChange={setFilters}
             />
 
+            {/* Table of filtered questions */}
             <div className="max-h-64 overflow-auto border p-2 rounded mb-4">
                 {filteredQuestions.length === 0 ? (
                     <p className="text-gray-500 text-center">Keine verfügbaren Fragen.</p>
@@ -152,12 +157,24 @@ const DepartmentAddQuestionsModal: React.FC<DepartmentAddQuestionsModalProps> = 
                 )}
             </div>
 
+            {/* Action Buttons */}
             <div className="flex justify-end gap-2">
-                <Button onClick={onClose} disabled={loading} className="bg-gray-300 hover:bg-gray-400">
+                <Button
+                    onClick={onClose}
+                    disabled={loading}
+                    className="bg-gray-300 hover:bg-gray-400"
+                >
                     Abbrechen
                 </Button>
-                <Button onClick={handleAdd} disabled={loading || selectedIds.length === 0}>
-                    {loading ? 'Hinzufügen...' : selectedIds.length > 0 ? `Hinzufügen (${selectedIds.length})` : 'Auswählen'}
+                <Button
+                    onClick={handleAdd}
+                    disabled={loading || selectedIds.length === 0}
+                >
+                    {loading
+                        ? 'Hinzufügen...'
+                        : selectedIds.length > 0
+                            ? `Hinzufügen (${selectedIds.length})`
+                            : 'Auswählen'}
                 </Button>
             </div>
         </Modal>

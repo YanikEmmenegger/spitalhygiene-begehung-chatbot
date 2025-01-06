@@ -6,30 +6,28 @@ import Button from '@/components/Button';
 import { SubCategory, QUESTION_TYPES } from '@/types';
 
 interface QuestionModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    isOpen: boolean; // Controls the visibility of the modal
+    onClose: () => void; // Callback to close the modal
     onSave: (data: {
         question: string;
         subcategory: number;
         type: string;
         critical: boolean;
         priority: number;
-        link_name: string; // optional, but typed as string
-        link_url: string;  // optional, but typed as string
-    }) => Promise<void>;
-    subcategories: SubCategory[];
+        link_name: string; // Optional, but typed as a string
+        link_url: string;  // Optional, but typed as a string
+    }) => Promise<void>; // Callback to save question data
+    subcategories: SubCategory[]; // List of available subcategories
 
-    initialName?: string;
-    initialSubcategoryId?: number;
-    initialType?: string;
-    initialCritical?: boolean;
-    initialPriority?: number;
+    initialName?: string; // Initial value for question name
+    initialSubcategoryId?: number; // Initial value for subcategory ID
+    initialType?: string; // Initial value for question type
+    initialCritical?: boolean; // Initial value for critical status
+    initialPriority?: number; // Initial value for priority
+    initialLinkName?: string; // Initial value for link name
+    initialLinkUrl?: string; // Initial value for link URL
 
-    /** NEW: link fields */
-    initialLinkName?: string;
-    initialLinkUrl?: string;
-
-    loading: boolean;
+    loading: boolean; // Loading state for save operation
 }
 
 const QuestionModal: React.FC<QuestionModalProps> = ({
@@ -46,20 +44,17 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
                                                          initialLinkUrl = '',
                                                          loading,
                                                      }) => {
+    // Form state variables
     const [question, setQuestion] = useState(initialName);
     const [subcategoryId, setSubcategoryId] = useState<number | ''>(initialSubcategoryId || '');
     const [type, setType] = useState(initialType);
     const [critical, setCritical] = useState(initialCritical);
-
-    // Priority as a string to avoid NaN issues
     const [priorityStr, setPriorityStr] = useState(String(initialPriority));
-
-    // Link fields
     const [linkName, setLinkName] = useState(initialLinkName);
     const [linkUrl, setLinkUrl] = useState(initialLinkUrl);
-
     const [error, setError] = useState<string | null>(null);
 
+    // Reset form fields when modal opens
     useEffect(() => {
         if (isOpen) {
             setQuestion(initialName);
@@ -67,10 +62,8 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
             setType(initialType || '');
             setCritical(initialCritical);
             setPriorityStr(String(initialPriority));
-
             setLinkName(initialLinkName);
             setLinkUrl(initialLinkUrl);
-
             setError(null);
         }
     }, [
@@ -84,37 +77,41 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
         initialLinkUrl,
     ]);
 
-    // Group subcategories by category for <optgroup>
+    // Group subcategories by category for dropdown grouping
     const categorizedSubs = subcategories.reduce(
-        (acc: { [catName: string]: SubCategory[] }, sc) => {
-            const catName = sc.category.name;
-            if (!acc[catName]) acc[catName] = [];
-            acc[catName].push(sc);
+        (acc: { [catName:
+
+            string]: SubCategory[] }, sc) => {
+            const catName = sc.category.name; // Group by category name
+            if (!acc[catName]) acc[catName] = []; // Initialize if not present
+            acc[catName].push(sc); // Add subcategory to the group
             return acc;
         },
         {}
     );
 
+    // Handle form submission
     const handleSave = async () => {
-        setError(null);
+        setError(null); // Clear any existing error messages
         if (!question.trim()) {
-            setError('Fragetext darf nicht leer sein.');
+            setError('Fragetext darf nicht leer sein.'); // Validate question text
             return;
         }
         if (!subcategoryId) {
-            setError('Bitte eine Unterkategorie auswählen.');
+            setError('Bitte eine Unterkategorie auswählen.'); // Validate subcategory selection
             return;
         }
         if (!type) {
-            setError('Bitte einen Fragentyp auswählen.');
+            setError('Bitte einen Fragentyp auswählen.'); // Validate type selection
             return;
         }
 
-        // parse priority
+        // Parse priority value
         const parsedPrio = parseInt(priorityStr, 10);
         const safePrio = isNaN(parsedPrio) ? 0 : parsedPrio;
 
         try {
+            // Call onSave with the form data
             await onSave({
                 question: question.trim(),
                 subcategory: subcategoryId as number,
@@ -124,9 +121,9 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
                 link_name: linkName.trim(),
                 link_url: linkUrl.trim(),
             });
-            onClose(); // close on success
+            onClose(); // Close modal on successful save
         } catch (err) {
-            setError(String(err));
+            setError(String(err)); // Display error message
         }
     };
 
@@ -138,7 +135,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
             {error && <div className="text-red-500 mb-4">{error}</div>}
 
             <div className="space-y-4">
-                {/* Question text */}
+                {/* Question text input */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Fragetext</label>
                     <input
@@ -199,19 +196,19 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
                     <label>Kritisch?</label>
                 </div>
 
-                {/* Priority */}
+                {/* Priority input */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Priorität</label>
                     <input
                         type="number"
-                        className="w-full border rounded px-3 py-2"
                         value={priorityStr}
                         onChange={e => setPriorityStr(e.target.value)}
+                        className="w-full border rounded px-3 py-2"
                         placeholder="z.B. 0"
                     />
                 </div>
 
-                {/* Link name */}
+                {/* Link name input */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Link Name</label>
                     <input
@@ -223,7 +220,7 @@ const QuestionModal: React.FC<QuestionModalProps> = ({
                     />
                 </div>
 
-                {/* Link URL */}
+                {/* Link URL input */}
                 <div>
                     <label className="block text-sm font-medium mb-1">Link URL</label>
                     <input

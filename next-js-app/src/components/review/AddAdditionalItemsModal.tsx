@@ -1,34 +1,40 @@
 'use client';
 
-import {Question, ReviewItem} from "@/types";
-import {useEffect, useState} from "react";
-import axios from "axios";
-import {useReview} from "@/context/ReviewContext";
-import Modal from "@/components/Modal";
-import QuestionBlock from "@/components/review/QuestionBlock";
-import Button from "@/components/Button";
-import {v4 as uuidv4} from "uuid";
+// Imports necessary types, hooks, and components
+import {Question, ReviewItem} from "@/types"; // Types for questions and review items
+import {useEffect, useState} from "react"; // React hooks for state management and side effects
+import axios from "axios"; // HTTP client for API requests
+import {useReview} from "@/context/ReviewContext"; // Custom hook for review context
+import Modal from "@/components/Modal"; // Modal component for displaying additional items
+import QuestionBlock from "@/components/review/QuestionBlock"; // UI block for displaying questions
+import Button from "@/components/Button"; // Button component
+import {v4 as uuidv4} from "uuid"; // UUID generator for unique identifiers
 
+// Component for adding additional review items
 const AddAdditionalItemsModal = () => {
+    // Extracts context values and functions from the review context
     const {isModalOpen, toggleModal, addNewReviewItems, review} = useReview();
 
-    const [categories, setCategories] = useState<{ [key: string]: Question[] }>({});
-    const [questions, setQuestions] = useState<Question[]>([]);
-    const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [saveButtonText, setSaveButtonText] = useState<string | React.ReactNode>("Hinzufügen");
+    // State variables for managing data and UI states
+    const [categories, setCategories] = useState<{ [key: string]: Question[] }>({}); // Grouped questions by category
+    const [questions, setQuestions] = useState<Question[]>([]); // List of all questions
+    const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]); // IDs of selected questions
+    const [error, setError] = useState<string | null>(null); // Error message
+    const [loading, setLoading] = useState<boolean>(true); // Loading state
+    const [saveButtonText, setSaveButtonText] = useState<string | React.ReactNode>("Hinzufügen"); // Text for save button
 
+    // Fetches questions from the API, excluding already included ones
     const fetchQuestions = async () => {
-        const idsAlreadyInReview = review!.reviewItems.map((item) => item.question.id).join(";");
+        const idsAlreadyInReview = review!.reviewItems.map((item) => item.question.id).join(";"); // Collects IDs of existing review items
 
-        setLoading(true);
+        setLoading(true); // Sets loading state to true
         try {
-            const response = await axios.get("/api/questions?exclude=" + idsAlreadyInReview);
+            const response = await axios.get("/api/questions?exclude=" + idsAlreadyInReview); // API call to fetch questions
             if (response.data.data) {
-                const allQuestions: Question[] = response.data.data;
-                setQuestions(allQuestions);
+                const allQuestions: Question[] = response.data.data; // Extracts questions from response
+                setQuestions(allQuestions); // Updates questions state
 
+                // Groups questions by category
                 const sortedCategories: { [key: string]: Question[] } = {};
                 allQuestions.forEach((question: Question) => {
                     const categoryName = question.subcategory.category.name;
@@ -37,47 +43,51 @@ const AddAdditionalItemsModal = () => {
                     }
                     sortedCategories[categoryName].push(question);
                 });
-                setCategories(sortedCategories);
-                setError(null);
+                setCategories(sortedCategories); // Updates categories state
+                setError(null); // Clears error state
             } else {
-                setError("Keine Fragen gefunden.");
+                setError("Keine Fragen gefunden."); // Sets error message if no questions found
             }
         } catch (e) {
-            console.error("Fehler beim Laden der Fragen", e);
-            setError("Fehler beim Laden der Fragen.");
+            console.error("Fehler beim Laden der Fragen", e); // Logs error to console
+            setError("Fehler beim Laden der Fragen."); // Sets error message
         } finally {
-            setLoading(false);
+            setLoading(false); // Sets loading state to false
         }
     };
 
+    // Toggles the selection of a question by ID
     const toggleQuestionSelection = (questionId: number) => {
         setSelectedQuestions((prevSelected) =>
             prevSelected.includes(questionId)
-                ? prevSelected.filter((id) => id !== questionId)
-                : [...prevSelected, questionId]
+                ? prevSelected.filter((id) => id !== questionId) // Removes ID if already selected
+                : [...prevSelected, questionId] // Adds ID if not selected
         );
     };
 
+    // Saves selected questions as new review items
     const handleSave = async () => {
-        setSaveButtonText("Hinzufügen....");
+        setSaveButtonText("Hinzufügen...."); // Updates save button text
 
-        const selectedFullQuestions = questions.filter((q) => selectedQuestions.includes(q.id));
+        const selectedFullQuestions = questions.filter((q) => selectedQuestions.includes(q.id)); // Filters selected questions
         const newReviewItems: ReviewItem[] = selectedFullQuestions.map((question) => ({
-            _id: uuidv4(),
+            _id: uuidv4(), // Generates unique ID
             question,
-            status: "not reviewed",
-            comment: "",
-            persons: [],
+            status: "not reviewed", // Default status
+            comment: "", // Empty comment
+            persons: [], // Empty persons array
         }));
 
-        addNewReviewItems(newReviewItems);
+        addNewReviewItems(newReviewItems); // Adds new review items to the review
 
+        // Resets state and closes modal
         setSelectedQuestions([]);
         setCategories({});
         setSaveButtonText("Hinzufügen");
         toggleModal();
     };
 
+    // Fetches questions when the modal is opened
     useEffect(() => {
         if (isModalOpen) {
             fetchQuestions();
@@ -85,6 +95,7 @@ const AddAdditionalItemsModal = () => {
     }, [isModalOpen]);
 
     return (
+        // Modal for adding additional items
         <Modal onClose={toggleModal} isOpen={isModalOpen}>
             <div className="flex flex-col h-full">
                 {/* Scrollable Content */}
@@ -93,8 +104,8 @@ const AddAdditionalItemsModal = () => {
                     <p className="text-gray-600 mb-4">
                         Hier können zusätzliche Items hinzugefügt werden, die nicht in der Begehung enthalten sind.
                     </p>
-                    {error && <p className="text-red-500">{error}</p>}
-                    {loading && <p>Laden...</p>}
+                    {error && <p className="text-red-500">{error}</p>} {/* Displays error message */}
+                    {loading && <p>Laden...</p>} {/* Displays loading indicator */}
 
                     {!loading && !error && (
                         <div className="flex flex-col gap-6">
@@ -106,33 +117,32 @@ const AddAdditionalItemsModal = () => {
                                             <QuestionBlock
                                                 key={question.id}
                                                 question={question}
-                                                isSelected={selectedQuestions.includes(question.id)}
-                                                onClick={() => toggleQuestionSelection(question.id)}
+                                                isSelected={selectedQuestions.includes(question.id)} // Checks if selected
+                                                onClick={() => toggleQuestionSelection(question.id)} // Toggles selection
                                             />
                                         ))}
                                     </div>
                                 </div>
                             ))}
-                            {questions.length === 0 && <p>Keine weiteren Fragen verfügbar.</p>}
+                            {questions.length === 0 && <p>Keine weiteren Fragen verfügbar.</p>} {/* No questions message */}
                         </div>
                     )}
                 </div>
 
                 {/* Fixed Footer with Buttons */}
-
-            </div>
-            <div className="flex flex-col items-center justify-end gap-4 p-4 w-full  bg-white border-t sticky bottom-0">
-                <Button
-                    className={`w-full ${saveButtonText === "Hinzufügen" ? "bg-lightGreen" : "bg-gray-300"}`}
-                    disabled={saveButtonText !== "Hinzufügen" || loading || questions.length === 0}
-                    onClick={handleSave}
-                >
-                    {saveButtonText}
-                </Button>
-                <Button className="bg-transparent w-full text-lightGreen border-lightGreen border"
-                        onClick={toggleModal}>
-                    Abbrechen
-                </Button>
+                <div className="flex flex-col items-center justify-end gap-4 p-4 w-full bg-white border-t sticky bottom-0">
+                    <Button
+                        className={`w-full ${saveButtonText === "Hinzufügen" ? "bg-lightGreen" : "bg-gray-300"}`}
+                        disabled={saveButtonText !== "Hinzufügen" || loading || questions.length === 0} // Disable under conditions
+                        onClick={handleSave} // Calls save function
+                    >
+                        {saveButtonText}
+                    </Button>
+                    <Button className="bg-transparent w-full text-lightGreen border-lightGreen border"
+                            onClick={toggleModal}>
+                        Abbrechen
+                    </Button>
+                </div>
             </div>
         </Modal>
     );

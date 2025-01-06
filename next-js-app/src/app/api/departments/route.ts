@@ -1,7 +1,7 @@
-import {NextRequest, NextResponse} from "next/server";
-import {createClient} from "@/utils/supabase/server";
-import {isAdmin} from "@/app/api/utils/adminCheck";
-import {handleSupabaseError} from "@/app/api/handleSupabaseError";
+import { NextRequest, NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
+import { isAdmin } from "@/app/api/utils/adminCheck";
+import { handleSupabaseError } from "@/app/api/handleSupabaseError";
 
 // GET Departments
 export async function GET(request: NextRequest) {
@@ -31,70 +31,126 @@ export async function GET(request: NextRequest) {
         error = response.error;
     }
 
+    // Handle errors from Supabase
     if (error) {
         return handleSupabaseError(error);
     }
 
+    // Respond with the retrieved department(s)
     return NextResponse.json({ data });
 }
 
 // POST Create Department
 export async function POST(req: NextRequest) {
+    // Check if the user has admin privileges
     if (!(await isAdmin())) {
-        return NextResponse.json({error: "Unauthorized"}, {status: 401});
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const {name} = await req.json();
+
+    // Parse the request body to extract the department name
+    const { name } = await req.json();
+
+    // Validate the department name
     if (!name || !name.trim()) {
-        return NextResponse.json({error: "Name is required"}, {status: 400});
+        return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
+
     const supabase = await createClient();
-    const {data, error} = await supabase.from("department").insert({name}).select("*");
+
+    // Insert the new department into the database
+    const { data, error } = await supabase
+        .from("department")
+        .insert({ name })
+        .select("*");
+
+    // Handle potential errors
     if (error) {
         return handleSupabaseError(error);
     }
-    return NextResponse.json({data}, {status: 201});
+
+    // Respond with the created department
+    return NextResponse.json({ data }, { status: 201 });
 }
 
 // DELETE Department
 export async function DELETE(req: NextRequest) {
+    // Check if the user has admin privileges
     if (!(await isAdmin())) {
         console.log("Unauthorized");
-        console.log("HIER HIER HIER")
-        return NextResponse.json({error: "Unauthorized"}, {status: 401});
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const {searchParams} = new URL(req.url);
+
+    // Extract the department ID from query parameters
+    const { searchParams } = new URL(req.url);
     const id = searchParams.get("id");
+
+    // Validate the presence of the department ID
     if (!id) {
-        return NextResponse.json({error: "Department ID is required"}, {status: 400});
+        return NextResponse.json({ error: "Department ID is required" }, { status: 400 });
     }
+
     const supabase = await createClient();
-    const {count: questionCount, error: checkError} = await supabase
+
+    // Check if the department has connected questions
+    const { count: questionCount, error: checkError } = await supabase
         .from("department_question")
-        .select("*", {count: "exact"})
+        .select("*", { count: "exact" })
         .eq("department_id", id);
+
+    // Prevent deletion if connected questions exist
     if (checkError || (questionCount && questionCount > 0)) {
-        return NextResponse.json({error: "Cannot delete department with connected questions"}, {status: 400});
+        return NextResponse.json(
+            { error: "Cannot delete department with connected questions" },
+            { status: 400 }
+        );
     }
-    const {error} = await supabase.from("department").delete().eq("id", id);
+
+    // Delete the department from the database
+    const { error } = await supabase
+        .from("department")
+        .delete()
+        .eq("id", id);
+
+    // Handle potential errors
     if (error) {
         return handleSupabaseError(error);
     }
-    return NextResponse.json({message: "Department deleted successfully"});
+
+    // Respond with a success message
+    return NextResponse.json({ message: "Department deleted successfully" });
 }
 
 // PUT Update Department
 export async function PUT(req: NextRequest) {
+    // Check if the user has admin privileges
     if (!(await isAdmin())) {
-        return NextResponse.json({error: "Unauthorized"}, {status: 401});
+        return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-    const {id, name} = await req.json();
+
+    // Parse the request body to extract department details
+    const { id, name } = await req.json();
+
+    // Validate that both ID and name are provided
     if (!id || !name || !name.trim()) {
-        return NextResponse.json({error: "Department ID and name are required"}, {status: 400});
+        return NextResponse.json(
+            { error: "Department ID and name are required" },
+            { status: 400 }
+        );
     }
+
     const supabase = await createClient();
-    const {error} = await supabase.from("department").update({name}).eq("id", id);
+
+    // Update the department name in the database
+    const { error } = await supabase
+        .from("department")
+        .update({ name })
+        .eq("id", id);
+
+    // Handle potential errors
     if (error) {
         return handleSupabaseError(error);
     }
-    return NextResponse.json({message: "Department updated successfully"});
+
+    // Respond with a success message
+    return NextResponse.json({ message: "Department updated successfully" });
 }

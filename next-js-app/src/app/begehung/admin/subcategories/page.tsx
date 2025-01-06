@@ -9,23 +9,25 @@ import SubcategoryModal from "@/components/admin/SubcategoryModal";
 import { Category, SubCategory } from "@/types";
 
 const SubcategoryPage = () => {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [subcategories, setSubcategories] = useState<SubCategory[]>([]);
-    const [pageError, setPageError] = useState<string | null>(null);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [modalOpen, setModalOpen] = useState<boolean>(false);
-    const [editingSubcategory, setEditingSubcategory] = useState<SubCategory | null>(null);
-    const [deletingId, setDeletingId] = useState<number | null>(null);
-    const [saving, setSaving] = useState<boolean>(false);
+    // State Management
+    const [categories, setCategories] = useState<Category[]>([]); // List of categories
+    const [subcategories, setSubcategories] = useState<SubCategory[]>([]); // List of subcategories
+    const [pageError, setPageError] = useState<string | null>(null); // Page-level error message
+    const [deleteError, setDeleteError] = useState<string | null>(null); // Error message for delete operation
+    const [loading, setLoading] = useState<boolean>(true); // Loading state for fetching data
+    const [modalOpen, setModalOpen] = useState<boolean>(false); // Modal visibility state
+    const [editingSubcategory, setEditingSubcategory] = useState<SubCategory | null>(null); // Subcategory being edited
+    const [deletingId, setDeletingId] = useState<number | null>(null); // ID of the subcategory being deleted
+    const [saving, setSaving] = useState<boolean>(false); // Saving state for create/edit operations
 
+    // Fetch categories and subcategories on mount
     useEffect(() => {
         const fetchData = async () => {
             try {
                 setLoading(true);
                 const [catsRes, subsRes] = await Promise.all([
-                    axios.get("/api/category"),
-                    axios.get("/api/subcategory"),
+                    axios.get("/api/category"), // Fetch categories
+                    axios.get("/api/subcategory"), // Fetch subcategories
                 ]);
                 setCategories(catsRes.data.data || []);
                 setSubcategories(subsRes.data.data || []);
@@ -41,7 +43,11 @@ const SubcategoryPage = () => {
 
     /**
      * Save a subcategory (create or update).
-     * Includes link_name, link_url as well.
+     * @param name - The name of the subcategory
+     * @param categoryId - The ID of the parent category
+     * @param priority - The priority of the subcategory
+     * @param linkName - Optional link name
+     * @param linkUrl - Optional link URL
      */
     const saveSubcategory = (
         name: string,
@@ -63,7 +69,8 @@ const SubcategoryPage = () => {
                         link_name: linkName,
                         link_url: linkUrl,
                     });
-                    // Update local state
+
+                    // Update local state with the updated subcategory
                     setSubcategories((prev) =>
                         prev.map((sub) =>
                             sub.id === editingSubcategory.id
@@ -87,10 +94,12 @@ const SubcategoryPage = () => {
                         link_name: linkName,
                         link_url: linkUrl,
                     });
+
                     const newSub = {
                         ...response.data.data[0],
                         category: categories.find((cat) => cat.id === categoryId)!,
                     };
+
                     setSubcategories((prev) => [...prev, newSub]);
                 }
                 resolve();
@@ -104,11 +113,16 @@ const SubcategoryPage = () => {
         });
     };
 
+    /**
+     * Handle deletion of a subcategory.
+     * @param id - The ID of the subcategory to delete
+     */
     const handleDelete = async (id: number) => {
         setDeleteError(null);
         setDeletingId(id);
         try {
             await axios.delete(`/api/subcategory?id=${id}`);
+            // Remove the deleted subcategory from local state
             setSubcategories((prev) => prev.filter((sub) => sub.id !== id));
         } catch (e) {
             const error = e as AxiosError<{ error: string }>;
@@ -118,14 +132,21 @@ const SubcategoryPage = () => {
         }
     };
 
+    /**
+     * Open the modal for creating or editing a subcategory.
+     * @param subcategory - Optional subcategory to edit
+     */
     const openModal = (subcategory?: SubCategory) => {
-        setEditingSubcategory(subcategory || null);
-        setModalOpen(true);
+        setEditingSubcategory(subcategory || null); // Set the subcategory to edit (or null for new)
+        setModalOpen(true); // Open the modal
     };
 
+    /**
+     * Close the modal and reset editing state.
+     */
     const closeModal = () => {
         setModalOpen(false);
-        setEditingSubcategory(null);
+        setEditingSubcategory(null); // Clear editing state
     };
 
     return (
@@ -134,8 +155,10 @@ const SubcategoryPage = () => {
             {pageError && <p className="text-red-500">{pageError}</p>}
             {deleteError && <p className="text-red-500">{deleteError}</p>}
 
+            {/* Button to open the modal for creating a new subcategory */}
             <Button onClick={() => openModal()}>Neue Unterkategorie hinzufügen</Button>
 
+            {/* Table to display subcategories */}
             <Table
                 data={subcategories}
                 columns={[
@@ -168,6 +191,7 @@ const SubcategoryPage = () => {
                 emptyMessage="Keine Unterkategorien verfügbar."
             />
 
+            {/* Modal for creating or editing subcategories */}
             {modalOpen && (
                 <SubcategoryModal
                     isOpen={modalOpen}

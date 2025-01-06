@@ -1,24 +1,25 @@
 'use client';
 
-import React, {useEffect, useState} from 'react';
-import axios, {AxiosError} from 'axios';
+import React, { useEffect, useState } from 'react';
+import axios, { AxiosError } from 'axios';
 import Button from '@/components/Button';
 import Table from '@/components/Table';
 import ConfirmDelete from '@/components/ConfirmDelete';
-import {Category} from '@/types';
+import { Category } from '@/types';
 import CategoryModal from '@/components/admin/CategoryModal';
 
 const CategoryPage = () => {
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [pageError, setPageError] = useState<string | null>(null);
-    const [deleteError, setDeleteError] = useState<string | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
-    const [modalOpen, setModalOpen] = useState<boolean>(false);
-    const [editingCategory, setEditingCategory] = useState<Category | null>(null);
-    const [deletingId, setDeletingId] = useState<number | null>(null);
-    const [saving, setSaving] = useState<boolean>(false);
+    // State management
+    const [categories, setCategories] = useState<Category[]>([]); // List of categories
+    const [pageError, setPageError] = useState<string | null>(null); // Error when loading categories
+    const [deleteError, setDeleteError] = useState<string | null>(null); // Error when deleting a category
+    const [loading, setLoading] = useState<boolean>(true); // Loading state for fetching categories
+    const [modalOpen, setModalOpen] = useState<boolean>(false); // Modal open state
+    const [editingCategory, setEditingCategory] = useState<Category | null>(null); // Category being edited
+    const [deletingId, setDeletingId] = useState<number | null>(null); // ID of the category being deleted
+    const [saving, setSaving] = useState<boolean>(false); // Loading state for saving a category
 
-    // Fetch categories on mount
+    // Fetch categories on component mount
     useEffect(() => {
         const fetchCategories = async () => {
             setLoading(true);
@@ -42,28 +43,26 @@ const CategoryPage = () => {
             setSaving(true);
             try {
                 if (editingCategory) {
-                    console.log(priority)
                     // Update existing category
                     await axios.put('/api/category', {
                         id: editingCategory.id,
                         name,
                         priority,
                     });
+                    // Update the category in the state
                     setCategories((prev) =>
                         prev.map((cat) =>
-                            cat.id === editingCategory.id
-                                ? { ...cat, name, priority }
-                                : cat
+                            cat.id === editingCategory.id ? { ...cat, name, priority } : cat
                         )
                     );
                 } else {
-                    // Create new category
+                    // Create a new category
                     const response = await axios.post('/api/category', {
                         name,
-                        priority, // might or might not be used in POST depending on your DB defaults
+                        priority, // Pass priority or let the backend handle defaults
                     });
                     const newCat = response.data.data[0];
-                    setCategories((prev) => [...prev, newCat]);
+                    setCategories((prev) => [...prev, newCat]); // Add the new category to the state
                 }
                 resolve();
             } catch (e) {
@@ -76,12 +75,13 @@ const CategoryPage = () => {
         });
     };
 
-    // Delete category
+    // Delete a category
     const handleDelete = async (id: number) => {
         setDeleteError(null);
         setDeletingId(id);
         try {
             await axios.delete(`/api/category?id=${id}`);
+            // Remove the deleted category from the state
             setCategories((prev) => prev.filter((cat) => cat.id !== id));
         } catch (e) {
             const error = e as AxiosError<{ error: string }>;
@@ -91,11 +91,13 @@ const CategoryPage = () => {
         }
     };
 
+    // Open the modal (for creating or editing)
     const openModal = (category?: Category) => {
-        setEditingCategory(category || null);
+        setEditingCategory(category || null); // Set the category being edited or null for a new category
         setModalOpen(true);
     };
 
+    // Close the modal
     const closeModal = () => {
         setModalOpen(false);
         setEditingCategory(null);
@@ -107,13 +109,15 @@ const CategoryPage = () => {
             {pageError && <p className="text-red-500">{pageError}</p>}
             {deleteError && <p className="text-red-500">{deleteError}</p>}
 
+            {/* Button to open modal for adding a new category */}
             <Button onClick={() => openModal()}>Neue Hauptkategorie hinzufügen</Button>
 
+            {/* Table to display categories */}
             <Table
                 data={categories}
                 columns={[
                     { header: 'Name', accessor: 'name' },
-                    { header: 'Priorität', accessor: 'priority' }, // new column
+                    { header: 'Priorität', accessor: 'priority' }, // Added priority column
                 ]}
                 actions={(item) => (
                     <div className="flex gap-2 justify-end items-center">
@@ -130,6 +134,7 @@ const CategoryPage = () => {
                 emptyMessage="Keine Kategorien verfügbar."
             />
 
+            {/* Modal for creating or editing a category */}
             {modalOpen && (
                 <CategoryModal
                     isOpen={modalOpen}

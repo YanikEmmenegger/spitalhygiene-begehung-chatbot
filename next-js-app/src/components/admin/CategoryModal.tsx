@@ -5,29 +5,28 @@ import Modal from '@/components/Modal';
 import Button from '@/components/Button';
 
 interface CategoryModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    onSave: (name: string, priority: number) => Promise<void>;
-    initialName?: string;
-    initialPriority?: number;
-    loading?: boolean;
+    isOpen: boolean; // Controls the modal's visibility
+    onClose: () => void; // Callback to close the modal
+    onSave: (name: string, priority: number) => Promise<void>; // Callback to save the category
+    initialName?: string; // Optional initial value for the category name
+    initialPriority?: number; // Optional initial value for the priority
+    loading?: boolean; // Indicates whether a save operation is in progress
 }
 
 const CategoryModal: React.FC<CategoryModalProps> = ({
                                                          isOpen,
                                                          onClose,
                                                          onSave,
-                                                         initialName = '',
-                                                         initialPriority = 0,
+                                                         initialName = '', // Default to an empty string if no initial name is provided
+                                                         initialPriority = 0, // Default to 0 if no initial priority is provided
                                                          loading,
                                                      }) => {
-    const [name, setName] = useState(initialName);
-    /**
-     * Store priority as a *string* to avoid passing NaN to <input>.
-     */
-    const [priorityStr, setPriorityStr] = useState(String(initialPriority));
-    const [error, setError] = useState<string | null>(null);
+    // State to manage form inputs
+    const [name, setName] = useState(initialName); // Category name
+    const [priorityStr, setPriorityStr] = useState(String(initialPriority)); // Priority as a string
+    const [error, setError] = useState<string | null>(null); // Error message for validation or save issues
 
+    // Reset the form when the modal opens
     useEffect(() => {
         if (isOpen) {
             setName(initialName);
@@ -36,25 +35,24 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
         }
     }, [isOpen, initialName, initialPriority]);
 
+    // Handle the save operation
     const handleSave = async () => {
         if (!name.trim()) {
-            setError('Name darf nicht leer sein.');
+            setError('Name darf nicht leer sein.'); // Validate that the name is not empty
             return;
         }
-        setError(null);
+        setError(null); // Clear previous errors
 
-        /**
-         * Safely parse the string to a number, default to 0 if empty or invalid.
-         */
+        // Parse the priority string to a number and default to 0 if invalid
         const parsedPriority = parseInt(priorityStr, 10);
         const safePriority = Number.isNaN(parsedPriority) ? 0 : parsedPriority;
 
         try {
-            await onSave(name.trim(), safePriority);
-            onClose(); // Only close if onSave didn't throw
+            await onSave(name.trim(), safePriority); // Call the onSave callback
+            onClose(); // Close the modal if the save was successful
         } catch (err) {
-            console.log(err);
-            setError('Fehler beim Speichern der Kategorie.');
+            console.error(err); // Log any errors
+            setError('Fehler beim Speichern der Kategorie.'); // Display a generic error message
         }
     };
 
@@ -91,8 +89,13 @@ const CategoryModal: React.FC<CategoryModalProps> = ({
                 </div>
             </div>
 
+            {/* Action buttons */}
             <div className="flex justify-end gap-2 mt-4">
-                <Button onClick={onClose} disabled={loading} className="bg-gray-300 hover:bg-gray-400">
+                <Button
+                    onClick={onClose}
+                    disabled={loading}
+                    className="bg-gray-300 hover:bg-gray-400"
+                >
                     Abbrechen
                 </Button>
                 <Button onClick={handleSave} disabled={loading}>
