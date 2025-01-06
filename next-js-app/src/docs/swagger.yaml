@@ -2,16 +2,8 @@ openapi: "3.0.3"
 info:
   version: "1.0.0"
   title: "Begehungstool API"
-  description: >
-    This API handles authentication, administration, and management of categories, subcategories, questions, departments, person types, and more for the Begehungstool (hygiene inspection tool).
 
-  contact:
-    name: "Support"
-    email: "begehung@yourdomain.example"
 
-servers:
-  - url: "https://your-domain.example"  # Adjust to your actual domain
-    description: "Production Server"
 
 tags:
   - name: "Auth"
@@ -580,7 +572,7 @@ paths:
       description: >
         Returns question data, including subcategory/category details.  
         Accepts optional search by text, department filtering, ID filtering, or `exclude` IDs.  
-        Sorts results by category.priority then subcategory.priority.
+        Sorts results by category.priority then subcategory.priority, then question.priority.
       parameters:
         - name: department
           in: query
@@ -618,7 +610,8 @@ paths:
       summary: "Create a new question."
       description: >
         Admin only.  
-        Body must have `{ question, critical, subcategory, type }`.  
+        Body must have `question, subcategory`.  
+        Fields `critical, type, priority, link_name, link_url` are optional.  
         `type` can be `'Beobachtung' | 'Frage Personal' | 'Frage ärztliches Personal' | 'nicht anwendbar'`.
       requestBody:
         required: true
@@ -629,12 +622,29 @@ paths:
               properties:
                 question:
                   type: string
+                  description: "The question text."
                 critical:
                   type: boolean
+                  default: false
                 subcategory:
                   type: number
+                  description: "Subcategory ID."
                 type:
                   type: string
+                  nullable: true
+                  description: "One of the recognized question types."
+                priority:
+                  type: number
+                  default: 0
+                  description: "An integer priority for ordering."
+                link_name:
+                  type: string
+                  nullable: true
+                  description: "Optional link name for referencing external docs."
+                link_url:
+                  type: string
+                  nullable: true
+                  description: "Optional URL for referencing external docs."
               required: [question, subcategory]
       responses:
         '201':
@@ -676,7 +686,8 @@ paths:
       summary: "Update a question."
       description: >
         Admin only.  
-        Body must have `{ id, question, critical, subcategory, type }`.
+        Body must have `id, question, subcategory`.  
+        Fields `critical, type, priority, link_name, link_url` are optional to update.
       requestBody:
         required: true
         content:
@@ -686,14 +697,32 @@ paths:
               properties:
                 id:
                   type: number
+                  description: "Question ID to update."
                 question:
                   type: string
+                  description: "New question text."
                 critical:
                   type: boolean
+                  description: "Mark if critical."
                 subcategory:
                   type: number
+                  description: "Subcategory ID."
                 type:
                   type: string
+                  nullable: true
+                  description: "One of [Beobachtung, Frage Personal, Frage ärztliches Personal, nicht anwendbar]."
+                priority:
+                  type: number
+                  default: 0
+                  description: "Priority for ordering."
+                link_name:
+                  type: string
+                  nullable: true
+                  description: "Optional name for an external link."
+                link_url:
+                  type: string
+                  nullable: true
+                  description: "Optional URL for external doc."
               required: [id, question, subcategory]
       responses:
         '200':
@@ -743,4 +772,4 @@ components:
         This API mostly uses Supabase JWT tokens or server sessions.  
         Some admin routes require checking the user is in the `admin_users` table.
 
-security: []
+
