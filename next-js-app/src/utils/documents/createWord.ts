@@ -135,119 +135,6 @@ function typeLegend(typeStr?: string | null): string {
 }
 
 /**
- * Create a Table for the subcategory's items.
- * Columns: Frage | Typ | Status | Personen | Kommentar
- *
- * If question is critical => highlight the entire row (except the status cell) in light yellow (FFFF99).
- * The status cell is colored by status:
- * - green if approved
- * - red if failed
- * - yellow if partially
- */
-function buildSubcategoryTable(items: ReviewItem[]): Table {
-    // Header row
-    const headerRow = new TableRow({
-        children: [
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: "Frage", bold: true })],
-                    }),
-                ],
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: "Typ", bold: true })],
-                    }),
-                ],
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: "Status", bold: true })],
-                    }),
-                ],
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: "Person(en)", bold: true })],
-                    }),
-                ],
-            }),
-            new TableCell({
-                children: [
-                    new Paragraph({
-                        children: [new TextRun({ text: "Kommentar", bold: true })],
-                    }),
-                ],
-            }),
-        ],
-    });
-
-    // Data rows
-    const dataRows = items.map((item) => {
-        const { question, status, persons, comment } = item;
-        const isCritical = question.critical;
-
-        // For columns other than status, if critical => shading fill "FFFF99"
-        const defaultShading = isCritical
-            ? {
-                fill: "FFFF99",
-                type: ShadingType.CLEAR,
-                color: "auto",
-            }
-            : undefined;
-
-        // For the status cell, color depending on the status:
-        const statusShading = {
-            fill: getStatusFill(status),
-            type: ShadingType.CLEAR,
-            color: "auto",
-        };
-
-        return new TableRow({
-            children: [
-                // Frage
-                new TableCell({
-                    children: [new Paragraph(question.question)],
-                    shading: defaultShading,
-                }),
-                // Typ
-                new TableCell({
-                    children: [new Paragraph(typeLegend(question.type))],
-                    shading: defaultShading,
-                }),
-                // Status
-                new TableCell({
-                    children: [new Paragraph(getStatusText(status))],
-                    shading: statusShading,
-                }),
-                // Personen
-                new TableCell({
-                    children: [new Paragraph(formatPersons(persons))],
-                    shading: defaultShading,
-                }),
-                // Kommentar
-                new TableCell({
-                    children: [new Paragraph(comment || "")],
-                    shading: defaultShading,
-                }),
-            ],
-        });
-    });
-
-    return new Table({
-        width: {
-            size: 100,
-            type: WidthType.PERCENTAGE,
-        },
-        rows: [headerRow, ...dataRows],
-    });
-}
-
-/**
  * Build a subcategory heading that optionally includes a clickable hyperlink
  * if link_url is present.
  *
@@ -289,6 +176,167 @@ function buildSubcategoryHeading(
             ],
         });
     }
+}
+
+/**
+ * Build a single "Frage" paragraph, optionally with a link if question.link_url is present.
+ * - If `question.link_url` is set => create a link after the question text
+ * - If there's a `question.link_name` => use it as link text, else use the URL
+ *
+ * We'll return an array of `TextRun` or similar. Then we can place them in a single Paragraph.
+ */
+function buildQuestionParagraph(
+    questionText: string,
+    linkName?: string | null,
+    linkUrl?: string | null
+): Paragraph {
+    // Basic text run for the question
+    const textRuns: (TextRun | ExternalHyperlink)[] = [
+        new TextRun({
+            text: questionText,
+        }),
+    ];
+
+    if (linkUrl) {
+        // Add " - " and a hyperlink
+        const hyperlinkText = linkName && linkName.trim() ? linkName : linkUrl;
+        textRuns.push(
+            new TextRun({ text: " - " }),
+            new ExternalHyperlink({
+                link: linkUrl,
+                children: [
+                    new TextRun({
+                        text: hyperlinkText,
+                        style: "Hyperlink",
+                    }),
+                ],
+            })
+        );
+    }
+
+    return new Paragraph({
+        children: textRuns,
+    });
+}
+
+/**
+ * Create a Table for the subcategory's items.
+ * Columns: Frage(with link) | Typ | Status | Personen | Kommentar
+ *
+ * If question is critical => highlight the entire row (except the status cell) in light yellow (FFFF99).
+ * The status cell is colored by status:
+ * - green if approved
+ * - red if failed
+ * - yellow if partially
+ */
+function buildSubcategoryTable(items: ReviewItem[]): Table {
+    // Header row
+    const headerRow = new TableRow({
+        children: [
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Frage", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Typ", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Status", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Berufsgruppen", bold: true })],
+                    }),
+                ],
+            }),
+            new TableCell({
+                children: [
+                    new Paragraph({
+                        children: [new TextRun({ text: "Kommentar", bold: true })],
+                    }),
+                ],
+            }),
+        ],
+    });
+
+    // Data rows
+    const dataRows = items.map((item) => {
+        const { question, status, persons, comment } = item;
+        const isCritical = question.critical;
+
+        // For columns other than status, if critical => shading fill "FFFF99"
+        const defaultShading = isCritical
+            ? {
+                fill: "FFFF99",
+                type: ShadingType.CLEAR,
+                color: "auto",
+            }
+            : undefined;
+
+        // For the status cell, color depending on the status:
+        const statusShading = {
+            fill: getStatusFill(status),
+            type: ShadingType.CLEAR,
+            color: "auto",
+        };
+
+        // Build question paragraph (with optional link)
+        const questionParagraph = buildQuestionParagraph(
+            question.question,
+            question.link_name,
+            question.link_url
+        );
+
+        return new TableRow({
+            children: [
+                // Frage
+                new TableCell({
+                    children: [questionParagraph],
+                    shading: defaultShading,
+                }),
+                // Typ
+                new TableCell({
+                    children: [new Paragraph(typeLegend(question.type))],
+                    shading: defaultShading,
+                }),
+                // Status
+                new TableCell({
+                    children: [new Paragraph(getStatusText(status))],
+                    shading: statusShading,
+                }),
+                // Personen
+                new TableCell({
+                    children: [new Paragraph(formatPersons(persons))],
+                    shading: defaultShading,
+                }),
+                // Kommentar
+                new TableCell({
+                    children: [new Paragraph(comment || "")],
+                    shading: defaultShading,
+                }),
+            ],
+        });
+    });
+
+    return new Table({
+        width: {
+            size: 100,
+            type: WidthType.PERCENTAGE,
+        },
+        rows: [headerRow, ...dataRows],
+    });
 }
 
 /**
@@ -361,7 +409,7 @@ export async function generateWordFromTemplate(review: Review): Promise<Buffer> 
                         // Each subcategory
                         const subcatSections = Object.entries(subcatMap).flatMap(
                             ([subcatName, items]) => {
-                                // We'll pull linkName / linkUrl from the subcategory object
+                                // We'll pull linkName / linkUrl from subcategory obj
                                 // which is on the first item => item.question.subcategory.link_url / link_name
                                 const firstItem = items[0];
                                 const subcatObj = firstItem.question.subcategory;

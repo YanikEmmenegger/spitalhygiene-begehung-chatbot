@@ -110,6 +110,9 @@ export type Database = {
           id: number
           question: string
           subcategory: number
+          priority: number
+          link_name: string | null
+          link_url: string | null
           type: Database["public"]["Enums"]["question_types"] | null
         }
         Insert: {

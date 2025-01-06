@@ -4,9 +4,9 @@ import React, {useEffect, useState} from 'react';
 import axios, {AxiosError} from 'axios';
 import Button from '@/components/Button';
 import {Question, QUESTION_TYPES, QuestionTypesEnum, SubCategory} from '@/types';
-import QuestionModal from "@/components/admin/QuestionModal";
-import QuestionFilter from "@/components/admin/QuestionFilter";
-import QuestionTable from "@/components/admin/QuestionTable"; // newly created component
+import QuestionModal from '@/components/admin/QuestionModal';
+import QuestionFilter from '@/components/admin/QuestionFilter';
+import QuestionTable from '@/components/admin/QuestionTable';
 
 interface Filters {
     search?: string;
@@ -30,9 +30,8 @@ const QuestionPage = () => {
     const [filters, setFilters] = useState<Filters>({});
 
     // Check if any filter is active
-    const hasFilters = () => {
-        return filters.search?.trim() || filters.category || filters.subcategory || filters.critical;
-    };
+    const hasFilters = () =>
+        filters.search?.trim() || filters.category || filters.subcategory || filters.critical;
 
     const applyLocalFilters = () => {
         let filtered = [...allQuestions];
@@ -66,8 +65,6 @@ const QuestionPage = () => {
             setLoading(true);
             setPageError(null);
             try {
-                // Fetch all questions without any search
-                // and all subcategories once
                 const [qRes, scRes] = await Promise.all([
                     axios.get('/api/questions'), // no search param
                     axios.get('/api/subcategory'),
@@ -79,14 +76,13 @@ const QuestionPage = () => {
                 // Validate question types
                 for (const q of fetchedQuestions) {
                     if (!q.type || !QUESTION_TYPES.includes(q.type)) {
-                        q.type = null;
+                        q.type = null; // fallback
                     }
                 }
 
                 setAllQuestions(fetchedQuestions);
                 setSubcategories(fetchedSubcategories);
-                // Initially no filters, show all directly
-                setQuestions(fetchedQuestions);
+                setQuestions(fetchedQuestions); // initially show all
             } catch (err) {
                 console.log(err);
                 setPageError('Fehler beim Laden von Fragen oder Unterkategorien.');
@@ -106,7 +102,19 @@ const QuestionPage = () => {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [filters, allQuestions]);
 
-    const saveQuestion = (data: { question: string; subcategory: number; type: string; critical: boolean }) => {
+    /**
+     * Save question (create or update).
+     * The data object now includes `priority`, `link_name`, and `link_url`.
+     */
+    const saveQuestion = (data: {
+        question: string;
+        subcategory: number;
+        type: string;
+        critical: boolean;
+        priority: number;
+        link_name: string;
+        link_url: string;
+    }) => {
         return new Promise<void>(async (resolve, reject) => {
             setSaving(true);
             try {
@@ -125,20 +133,26 @@ const QuestionPage = () => {
                         critical: data.critical,
                         subcategory: data.subcategory,
                         type: qType,
+                        priority: data.priority,
+                        link_name: data.link_name || null,
+                        link_url: data.link_url || null,
                     });
 
-                    setAllQuestions((prev) =>
-                        prev.map((q) =>
+                    setAllQuestions(prev =>
+                        prev.map(q =>
                             q.id === editingQuestion.id
                                 ? {
                                     ...q,
                                     question: data.question,
                                     critical: data.critical,
                                     type: qType,
-                                    subcategory: subcategories.find((sc) => sc.id === data.subcategory)!,
+                                    priority: data.priority,
+                                    link_name: data.link_name || null,
+                                    link_url: data.link_url || null,
+                                    subcategory: subcategories.find(sc => sc.id === data.subcategory)!,
                                 }
-                                : q
-                        )
+                                : q,
+                        ),
                     );
                 } else {
                     // Create new question
@@ -147,13 +161,16 @@ const QuestionPage = () => {
                         critical: data.critical,
                         subcategory: data.subcategory,
                         type: qType,
+                        priority: data.priority,
+                        link_name: data.link_name || null,
+                        link_url: data.link_url || null,
                     });
                     const newQ = {
                         ...response.data.data[0],
-                        subcategory: subcategories.find((sc: SubCategory) => sc.id === data.subcategory)!,
                         type: qType,
+                        subcategory: subcategories.find(sc => sc.id === data.subcategory)!,
                     };
-                    setAllQuestions((prev) => [...prev, newQ]);
+                    setAllQuestions(prev => [...prev, newQ]);
                 }
                 resolve();
             } catch (e) {
@@ -171,7 +188,7 @@ const QuestionPage = () => {
         setDeletingId(id);
         try {
             await axios.delete(`/api/questions?id=${id}`);
-            setAllQuestions((prev) => prev.filter((q) => q.id !== id));
+            setAllQuestions(prev => prev.filter(q => q.id !== id));
         } catch (e) {
             const error = e as AxiosError<{ error: string }>;
             setDeleteError(error.response?.data?.error || 'Fehler beim Löschen der Frage.');
@@ -198,7 +215,7 @@ const QuestionPage = () => {
 
             <QuestionFilter
                 subcategories={subcategories}
-                onFilterChange={(newFilters) => setFilters(newFilters)}
+                onFilterChange={newFilters => setFilters(newFilters)}
             />
 
             <Button onClick={() => openModal()}>Neue Frage hinzufügen</Button>
@@ -221,6 +238,10 @@ const QuestionPage = () => {
                     initialSubcategoryId={editingQuestion?.subcategory.id}
                     initialType={editingQuestion?.type || ''}
                     initialCritical={editingQuestion?.critical || false}
+                    initialPriority={editingQuestion?.priority ?? 0}
+                    /** For link_name and link_url. Use empty strings if not present. */
+                    initialLinkName={editingQuestion?.link_name || ''}
+                    initialLinkUrl={editingQuestion?.link_url || ''}
                     loading={saving}
                 />
             )}

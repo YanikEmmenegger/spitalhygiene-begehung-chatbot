@@ -1,6 +1,6 @@
 'use client';
 
-import {Question, ReviewItem} from "@/types"; // Ensure this imports the updated types with `id: number`
+import {Question, ReviewItem} from "@/types";
 import {useEffect, useState} from "react";
 import axios from "axios";
 import {useReview} from "@/context/ReviewContext";
@@ -13,15 +13,13 @@ const AddAdditionalItemsModal = () => {
     const {isModalOpen, toggleModal, addNewReviewItems, review} = useReview();
 
     const [categories, setCategories] = useState<{ [key: string]: Question[] }>({});
-    const [questions, setQuestions] = useState<Question[]>([]); // Store all questions in a flat array
-    const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]); // Changed from `string[]` to `number[]`
+    const [questions, setQuestions] = useState<Question[]>([]);
+    const [selectedQuestions, setSelectedQuestions] = useState<number[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [loading, setLoading] = useState<boolean>(true);
     const [saveButtonText, setSaveButtonText] = useState<string | React.ReactNode>("Hinzufügen");
 
-    // Fetch and sort questions into categories
     const fetchQuestions = async () => {
-        // Get all IDs of questions that are already in the review
         const idsAlreadyInReview = review!.reviewItems.map((item) => item.question.id).join(";");
 
         setLoading(true);
@@ -52,7 +50,6 @@ const AddAdditionalItemsModal = () => {
         }
     };
 
-    // Toggle question selection
     const toggleQuestionSelection = (questionId: number) => {
         setSelectedQuestions((prevSelected) =>
             prevSelected.includes(questionId)
@@ -64,22 +61,17 @@ const AddAdditionalItemsModal = () => {
     const handleSave = async () => {
         setSaveButtonText("Hinzufügen....");
 
-        // Map selected question IDs to full Question objects
         const selectedFullQuestions = questions.filter((q) => selectedQuestions.includes(q.id));
-
-        // Convert selected Questions into ReviewItems
         const newReviewItems: ReviewItem[] = selectedFullQuestions.map((question) => ({
             _id: uuidv4(),
-            question, // Full Question object
+            question,
             status: "not reviewed",
             comment: "",
             persons: [],
         }));
 
-        // Add the new review items to the context
         addNewReviewItems(newReviewItems);
 
-        // Reset the modal
         setSelectedQuestions([]);
         setCategories({});
         setSaveButtonText("Hinzufügen");
@@ -94,41 +86,51 @@ const AddAdditionalItemsModal = () => {
 
     return (
         <Modal onClose={toggleModal} isOpen={isModalOpen}>
-            <div className="flex flex-col gap-4">
-                <h2 className="text-xl font-semibold">Zusätzliche Kontrollen hinzufügen</h2>
-                <p className="text-gray-600">
-                    Hier können zusätzliche Items hinzugefügt werden, die nicht in der Begehung enthalten sind.
-                </p>
-                {error && <p className="text-red-500">{error}</p>}
-                {loading && <p>Laden...</p>}
+            <div className="flex flex-col h-full">
+                {/* Scrollable Content */}
+                <div className="flex-grow overflow-y-auto p-4">
+                    <h2 className="text-xl font-semibold">Zusätzliche Kontrollen hinzufügen</h2>
+                    <p className="text-gray-600 mb-4">
+                        Hier können zusätzliche Items hinzugefügt werden, die nicht in der Begehung enthalten sind.
+                    </p>
+                    {error && <p className="text-red-500">{error}</p>}
+                    {loading && <p>Laden...</p>}
 
-                {!loading && !error && (
-                    <div className="flex flex-col gap-6">
-                        {questions.length > 0 && Object.entries(categories).map(([categoryName, questions]) => (
-                            <div key={categoryName} className="mb-4">
-                                <h3 className="text-lg font-medium text-gray-800 mb-2">{categoryName}</h3>
-                                <div className="grid grid-cols-1 gap-4">
-                                    {questions.map((question) => (
-                                        <QuestionBlock
-                                            key={question.id}
-                                            question={question}
-                                            isSelected={selectedQuestions.includes(question.id)}
-                                            onClick={() => toggleQuestionSelection(question.id)}
-                                        />
-                                    ))}
+                    {!loading && !error && (
+                        <div className="flex flex-col gap-6">
+                            {questions.length > 0 && Object.entries(categories).map(([categoryName, questions]) => (
+                                <div key={categoryName} className="mb-4">
+                                    <h3 className="text-lg font-medium text-gray-800 mb-2">{categoryName}</h3>
+                                    <div className="grid grid-cols-1 gap-4">
+                                        {questions.map((question) => (
+                                            <QuestionBlock
+                                                key={question.id}
+                                                question={question}
+                                                isSelected={selectedQuestions.includes(question.id)}
+                                                onClick={() => toggleQuestionSelection(question.id)}
+                                            />
+                                        ))}
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
-                        {questions.length === 0 && <p>Keine weiteren Fragen verfügbar.</p>}
-                    </div>
-                )}
+                            ))}
+                            {questions.length === 0 && <p>Keine weiteren Fragen verfügbar.</p>}
+                        </div>
+                    )}
+                </div>
+
+                {/* Fixed Footer with Buttons */}
+
+            </div>
+            <div className="flex flex-col items-center justify-end gap-4 p-4 w-full  bg-white border-t sticky bottom-0">
                 <Button
+                    className={`w-full ${saveButtonText === "Hinzufügen" ? "bg-lightGreen" : "bg-gray-300"}`}
                     disabled={saveButtonText !== "Hinzufügen" || loading || questions.length === 0}
                     onClick={handleSave}
                 >
                     {saveButtonText}
                 </Button>
-                <Button className={"bg-transparent text-lightGreen border-lightGreen border"} onClick={toggleModal}>
+                <Button className="bg-transparent w-full text-lightGreen border-lightGreen border"
+                        onClick={toggleModal}>
                     Abbrechen
                 </Button>
             </div>

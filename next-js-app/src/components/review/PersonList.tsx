@@ -42,7 +42,7 @@ const PersonList: FC<PersonListProps> = ({reviewItemID, initialPersons}) => {
     };
 
     return (
-        <Collapsable border={false} _isOpen={false} title="Personen erfassen">
+        <Collapsable border={false} _isOpen={false} title="Berufsgruppe erfassen">
             <div className="flex my-5 flex-col divide-y">
                 {persons && persons.map(person => (
                     <PersonItem key={person.id} person={person} onDelete={deletePerson}/>
@@ -54,7 +54,7 @@ const PersonList: FC<PersonListProps> = ({reviewItemID, initialPersons}) => {
             {
                 addNew ? (
                     <div className="flex flex-col gap-2 mt-4">
-                        <p>Neue Person hinzufügen:</p>
+                        <p>Neue Berufsgruppe hinzufügen:</p>
                         <PersonTypeSelect
                             value={newPerson.type}
                             onChange={type => setNewPerson({...newPerson, type})}
