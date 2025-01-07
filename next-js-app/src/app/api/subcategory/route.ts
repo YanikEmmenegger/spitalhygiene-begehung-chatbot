@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
-import { isAdmin } from "@/app/api/utils/adminCheck";
-import { handleSupabaseError } from "@/app/api/handleSupabaseError";
+import {NextRequest, NextResponse} from "next/server";
+import {createClient} from "@/utils/supabase/server";
+import {isAdmin} from "@/app/api/utils/adminCheck";
+import {handleSupabaseError} from "@/app/api/handleSupabaseError";
 
 // GET Subcategories
 export async function GET() {
@@ -11,16 +11,29 @@ export async function GET() {
     const { data, error } = await supabase
         .from("subcategory")
         .select("id, name, priority, link_name, link_url, category:category(*)")
-        .order("priority", { ascending: true }); // Order subcategories by priority
+        .order("priority", {ascending: true}); // Order subcategories by subcategory.priority
 
     if (error) {
         return handleSupabaseError(error);
     }
 
-    // Optionally sort subcategories by category name
+    // Sort by category priority, then by category name, then by category id
     data.sort((a, b) => {
         if (a.category && b.category) {
-            return a.category.name.localeCompare(b.category.name);
+            // 1) Compare category.priority
+            const priorityDiff = a.category.priority - b.category.priority;
+            if (priorityDiff !== 0) {
+                return priorityDiff;
+            }
+
+            // 2) Compare category.name
+            const nameDiff = a.category.name.localeCompare(b.category.name);
+            if (nameDiff !== 0) {
+                return nameDiff;
+            }
+
+            // 3) Compare category.id
+            return a.category.id - b.category.id;
         }
         return 0;
     });
