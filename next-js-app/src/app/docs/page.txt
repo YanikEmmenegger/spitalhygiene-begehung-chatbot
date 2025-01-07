@@ -6,7 +6,7 @@ import SwaggerUI from "swagger-ui-react";
 export default async function SwaggerDocsPage() {
 
     return (
-        <div style={{minHeight: '100vh'}}>
+        <div className={"h-auto min-h-screen"}>
             <SwaggerUI url="/api/doc"/>
         </div>
     )
