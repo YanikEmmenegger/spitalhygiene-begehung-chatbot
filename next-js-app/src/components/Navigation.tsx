@@ -1,5 +1,5 @@
-import { motion } from 'framer-motion'; // For animations
-import { twMerge } from 'tailwind-merge'; // Utility for merging Tailwind classes
+import {motion} from 'framer-motion'; // For animations
+import {twMerge} from 'tailwind-merge'; // Utility for merging Tailwind classes
 import Button from "@/components/Button"; // Reusable Button component
 import MenuButtons from "@/components/MenuButtons"; // Component for menu buttons
 
@@ -41,7 +41,12 @@ const Navigation: React.FC<NavigationProps> = ({ isNavVisible, isSmallScreen, to
                     <div className="flex flex-col items-start gap-1">
                         {/* Example text */}
                         <div className={"text-lightGray border-t-[1px] pt-5"}>
-                            Hier könnte noch ein weiterer Text stehen, was hier stehen soll, kann noch angepasst oder gelöscht werden...
+                            Alle Angaben und Auskünfte des Chatbots sind ohne Gewähr und lediglich als allgemeine
+                            Hilfestellung zu verstehen. Im Zweifelsfall wird empfohlen, den Hygieneordner für
+                            verbindliche Auskünfte zu konsultieren (entsprechende Dokumente sind in Antworten jeweils
+                            verlinkt. Jegliche Haftung für Verluste oder Schäden irgendwelcher Art, die aus oder im
+                            Zusammenhang mit dem Zugriff, der Benutzung (insbesondere bei inhaltlichen Fehlern) bzw.
+                            Unmöglichkeit der Nutzung oder dem Abfragen der Webseite entstehen können, wird abgelehnt.
                         </div>
                     </div>
 
